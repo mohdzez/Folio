@@ -15,22 +15,44 @@ export async function requestAndSubscribe() {
   if (!('Notification' in window)) throw new Error('Not supported');
   const perm = await Notification.requestPermission();
   if (perm !== 'granted') throw new Error('Permission denied');
-  if (CONFIG.PUSH_MODE === 'remote') await subscribeRemote();
+  if (CONFIG.PUSH_MODE === 'remote') await ensureRemoteSubscription();
   return perm;
 }
 
-async function subscribeRemote() {
+async function subscribeRemote(forceNew = false) {
   const reg = await navigator.serviceWorker.ready;
-  const sub = await reg.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlB64ToUint8(CONFIG.VAPID_PUBLIC_KEY),
-  });
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub || forceNew) {
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlB64ToUint8(CONFIG.VAPID_PUBLIC_KEY),
+    });
+  }
+
   const res = await fetch(`${CONFIG.WORKER_URL}/subscribe`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ subscription: sub }),
   });
-  if (!res.ok) throw new Error('Server error');
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Subscribe endpoint failed (${res.status}) ${text}`.trim());
+  }
+
+  return sub;
+}
+
+async function ensureRemoteSubscription() {
+  try {
+    return await subscribeRemote(false);
+  } catch (err) {
+    // Retry once with a forced fresh subscription in case old subscription is stale.
+    try {
+      return await subscribeRemote(true);
+    } catch {
+      throw err;
+    }
+  }
 }
 
 export async function updateNotifButton() {
@@ -39,9 +61,36 @@ export async function updateNotifButton() {
   if (!btn || !label) return;
   const status = await getNotifStatus();
   if (status === 'granted') {
-    label.textContent = 'Notifications on ✓';
-    btn.style.color = 'var(--green)';
-    btn.onclick = null;
+    try {
+      if (CONFIG.PUSH_MODE === 'remote') await ensureRemoteSubscription();
+      label.textContent = 'Notifications on ✓';
+      btn.style.color = 'var(--green)';
+      btn.style.opacity = '1';
+      btn.onclick = async () => {
+        try {
+          await ensureRemoteSubscription();
+          label.textContent = 'Notifications on ✓';
+        } catch (e) {
+          console.error('[Notifications] Reconnect failed:', e);
+          label.textContent = 'Reconnect failed';
+        }
+      };
+    } catch (e) {
+      console.error('[Notifications] Subscribe failed:', e);
+      label.textContent = 'Reconnect Notifications';
+      btn.style.color = 'var(--red)';
+      btn.style.opacity = '1';
+      btn.onclick = async () => {
+        try {
+          await ensureRemoteSubscription();
+          label.textContent = 'Notifications on ✓';
+          btn.style.color = 'var(--green)';
+        } catch (err) {
+          console.error('[Notifications] Reconnect failed:', err);
+          label.textContent = 'Reconnect failed';
+        }
+      };
+    }
   } else if (status === 'denied') {
     label.textContent = 'Notifications blocked';
     btn.style.opacity = '.5';
@@ -52,8 +101,9 @@ export async function updateNotifButton() {
       try {
         await requestAndSubscribe();
         updateNotifButton();
-      } catch {
-        label.textContent = 'Permission denied';
+      } catch (e) {
+        console.error('[Notifications] Enable failed:', e);
+        label.textContent = e?.message || 'Permission denied';
       }
     };
   }
