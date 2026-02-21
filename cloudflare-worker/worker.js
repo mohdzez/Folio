@@ -13,6 +13,8 @@
 //  Required secrets:      FCM_SERVER_KEY
 // ─────────────────────────────────────────────
 
+const DUE_WINDOW_MS = 60 * 1000; // 1 minute test window
+
 export default {
   // ── HTTP ROUTES ────────────────────────────
   async fetch(request, env) {
@@ -109,7 +111,7 @@ async function handleHealth(env) {
         dueSoonCount = tasks.filter((task) => {
           if (task.done || !task.due) return false;
           const dueMs = new Date(task.due + 'T09:00:00').getTime();
-          return dueMs > now && dueMs - now <= 60 * 60 * 1000;
+          return dueMs > now && dueMs - now <= DUE_WINDOW_MS;
         }).length;
       }
     } catch {
@@ -154,9 +156,9 @@ async function checkAndPush(env) {
   const now = Date.now();
   const dueSoon = tasks.filter((task) => {
     if (task.done || !task.due) return false;
-    // Fire if task is due within the next hour
+    // Fire if task is due within the next minute (testing)
     const dueMs = new Date(task.due + 'T09:00:00').getTime();
-    return dueMs > now && dueMs - now <= 60 * 60 * 1000;
+    return dueMs > now && dueMs - now <= DUE_WINDOW_MS;
   });
 
   console.log(`[Worker] ${dueSoon.length} task(s) due soon.`);
