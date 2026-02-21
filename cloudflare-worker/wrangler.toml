@@ -1,0 +1,20 @@
+name = "folio-push-worker"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# ── KV NAMESPACE ────────────────────────────────
+# Create with: wrangler kv:namespace create "FOLIO_KV"
+# Then paste the resulting id below.
+[[kv_namespaces]]
+binding = "FOLIO_KV"
+id      = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"
+
+# ── CRON SCHEDULE ───────────────────────────────
+# Runs every hour to check for due tasks
+[triggers]
+crons = ["0 * * * *"]
+
+# ── SECRETS ─────────────────────────────────────
+# After deploying, run:
+#   wrangler secret put FCM_SERVER_KEY
+# and paste your Firebase server key when prompted.
