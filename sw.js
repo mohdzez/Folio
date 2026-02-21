@@ -1,6 +1,6 @@
 // Folio Service Worker v2 — caching + push + scheduled notifs
 
-const CACHE = 'folio-v3';
+const CACHE = 'folio-v5';
 const ASSETS = [
   './',
   'index.html',
@@ -214,7 +214,7 @@ self.addEventListener('periodicsync', (e) => {
 
 async function checkDueTasks() {
   const db = await openDB();
-const CACHE = 'folio-v4';
+  const tasks = await new Promise((res, rej) => {
     const r = db.transaction('tasks', 'readonly').objectStore('tasks').getAll();
     r.onsuccess = (e) => res(e.target.result);
     r.onerror = (e) => rej(e.target.error);
