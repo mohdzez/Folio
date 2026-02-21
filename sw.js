@@ -214,7 +214,7 @@ self.addEventListener('periodicsync', (e) => {
 
 async function checkDueTasks() {
   const db = await openDB();
-  const tasks = await new Promise((res, rej) => {
+const CACHE = 'folio-v4';
     const r = db.transaction('tasks', 'readonly').objectStore('tasks').getAll();
     r.onsuccess = (e) => res(e.target.result);
     r.onerror = (e) => rej(e.target.error);
