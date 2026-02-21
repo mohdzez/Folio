@@ -7,7 +7,7 @@ compatibility_date = "2024-01-01"
 # Then paste the resulting id below.
 [[kv_namespaces]]
 binding = "FOLIO_KV"
-id      = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"
+id      = "1531a78cc2fe450a92dfc7ebc9958ab9"
 
 # ── CRON SCHEDULE ───────────────────────────────
 # Runs every hour to check for due tasks
