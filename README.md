@@ -2,7 +2,7 @@
 
 A beautiful, fast, offline-capable todo app with optional push notifications.
 
-```
+```text
 folio-pwa/
 ├── index.html                  ← App shell
 ├── manifest.json               ← PWA manifest
@@ -39,8 +39,8 @@ folio-pwa/
    The easiest free options:
    - **GitHub Pages**: push to a repo → Settings → Pages → deploy from `main`
    - **Cloudflare Pages**: connect your GitHub repo in the Cloudflare dashboard
-   - **Local dev**: `npx serve .` or `python3 -m http.server 8080`
-     (use ngrok for HTTPS if testing notifications locally)
+   - **Local dev**: `npx serve .` or `python3 -m http.server 8080` (use ngrok
+     for HTTPS if testing notifications locally)
 
 2. Open the URL in Chrome or Safari, and the app works instantly.
    - Data is saved in `localStorage`
@@ -51,8 +51,8 @@ folio-pwa/
 
 ## Generate PNG Icons
 
-The manifest requires 192×192 and 512×512 PNG icons.
-You can generate them from `assets/icons/icon.svg` using any of:
+The manifest requires 192×192 and 512×512 PNG icons. You can generate them from
+`assets/icons/icon.svg` using any of:
 
 ```bash
 # Using Inkscape
@@ -80,8 +80,8 @@ service worker fallback. No server needed.
 3. Click "Enable Notifications" in the app sidebar
 4. Done — the SW will fire reminders when tasks are due within the hour
 
-> **Note**: On desktop, the tab must be open (minimised is fine).
-> On Android Chrome, it works fully in the background.
+> **Note**: On desktop, the tab must be open (minimised is fine). On Android
+> Chrome, it works fully in the background.
 
 ---
 
@@ -126,42 +126,41 @@ Open `js/notifications.js` and update the `CONFIG` block:
 
 ```js
 const CONFIG = {
-  PUSH_MODE:      'remote',
+  PUSH_MODE: 'remote',
   VAPID_PUBLIC_KEY: 'YOUR_VAPID_PUBLIC_KEY_FROM_FIREBASE',
-  WORKER_URL:     'https://folio-push-worker.YOUR_SUBDOMAIN.workers.dev',
+  WORKER_URL: 'https://folio-push-worker.YOUR_SUBDOMAIN.workers.dev',
 };
 ```
 
 #### Step 4 — Enable notifications in the app
 
 Click "Enable Notifications" in the sidebar. The app will:
+
 1. Request browser permission
 2. Create a push subscription with FCM
 3. Send it to your Cloudflare Worker for storage
 
-The worker runs hourly via cron and pushes a notification for any task
-due within the next hour. You can manually trigger it at:
+The worker runs hourly via cron and pushes a notification for any task due
+within the next hour. You can manually trigger it at:
 `https://your-worker.workers.dev/trigger`
 
 ---
 
 ## Keyboard Shortcuts
 
-| Key | Action            |
-|-----|-------------------|
-| `N` | New task          |
-| `Esc`| Close modal      |
+| Key   | Action      |
+| ----- | ----------- |
+| `N`   | New task    |
+| `Esc` | Close modal |
 
 ---
 
 ## Data Storage
 
-| What | Where |
-|------|-------|
-| Tasks | `localStorage` (`folio_tasks`) |
-| Categories | `localStorage` (`folio_cats`) |
-| SW background check | `IndexedDB` (`folio-sw-db`) — auto-synced |
-| Push subscription | Cloudflare KV (remote mode only) |
+- **Tasks:** `localStorage` (`folio_tasks`)
+- **Categories:** `localStorage` (`folio_cats`)
+- **SW background check:** `IndexedDB` (`folio-sw-db`) — auto-synced
+- **Push subscription:** Cloudflare KV (remote mode only)
 
 ---
 
@@ -180,11 +179,14 @@ due within the next hour. You can manually trigger it at:
 ## Customization
 
 ### Change the color theme
+
 Edit the CSS variables in `css/main.css` `:root` block.
 
 ### Add notification timing
-In `cloudflare-worker/worker.js`, change the `60 * 60 * 1000` (1 hour)
-to any window you prefer, e.g. `2 * 60 * 60 * 1000` for 2 hours.
+
+In `cloudflare-worker/worker.js`, change the `60 * 60 * 1000` (1 hour) to any
+window you prefer, e.g. `2 * 60 * 60 * 1000` for 2 hours.
 
 ### Add more category colors
+
 Edit `CAT_COLORS` array in `js/categories.js`.
