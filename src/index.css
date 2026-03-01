@@ -101,8 +101,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  max-width: 480px;
-  margin: 0 auto;
+  width: 100%;
   position: relative;
   overflow: hidden;
 }
@@ -537,12 +536,9 @@ body {
 }
 
 .add-task-fab.open {
-  transform: rotate(45deg);
-  background: var(--surface-2);
-  color: var(--text-muted);
-  box-shadow: none;
-  animation: none;
-  border: 1px solid var(--border-2);
+  transform: scale(0);
+  pointer-events: none;
+  opacity: 0;
 }
 
 @keyframes fabGlow {
@@ -553,20 +549,20 @@ body {
 .add-task-panel {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%) translateY(100%);
+  left: 0;
+  right: 0;
   width: 100%;
-  max-width: 480px;
   background: var(--surface);
   border-top: 1px solid var(--border-2);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   padding: 20px 20px calc(var(--safe-bottom) + 20px);
   z-index: 99;
   transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  transform: translateY(100%);
 }
 
 .add-task-panel.open {
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(0);
 }
 
 .panel-handle {
@@ -671,7 +667,97 @@ body {
   transform: scale(0.97);
 }
 
-/* ─── Settings Panel ─────────────────────────────────────────────────────── */
+/* Datetime picker row */
+.add-task-datetime {
+  margin-top: 10px;
+}
+
+.datetime-toggle {
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s;
+}
+
+.datetime-toggle:hover { color: var(--text-muted); }
+.datetime-toggle.active { color: var(--accent); }
+
+.datetime-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.datetime-native {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  min-width: 0;
+}
+
+.datetime-native:focus {
+  border-color: var(--accent);
+}
+
+/* Override browser datetime input styling */
+.datetime-native::-webkit-calendar-picker-indicator {
+  filter: invert(0.6);
+  cursor: pointer;
+}
+
+.datetime-clear {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.datetime-clear:hover { color: var(--text); border-color: var(--border-2); }
+
+/* Cancel link in panel */
+.add-task-cancel {
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 8px 4px;
+  transition: color 0.15s;
+}
+
+.add-task-cancel:hover { color: var(--text-muted); }
+
+
 .settings-overlay {
   position: fixed;
   inset: 0;
@@ -932,9 +1018,22 @@ body {
 /* ─── Desktop/Tablet Layout ──────────────────────────────────────────────── */
 @media (min-width: 600px) {
   .app-shell {
+    max-width: 480px;
+    margin: 0 auto;
     border-left: 1px solid var(--border);
     border-right: 1px solid var(--border);
     box-shadow: 0 0 80px rgba(0,0,0,0.6);
+  }
+
+  .add-task-panel {
+    left: 50%;
+    right: auto;
+    width: 480px;
+    transform: translateX(-50%) translateY(100%);
+  }
+
+  .add-task-panel.open {
+    transform: translateX(-50%) translateY(0);
   }
 
   body::before {

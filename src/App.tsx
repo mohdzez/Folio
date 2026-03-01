@@ -156,16 +156,16 @@ export default function App() {
         onStar={toggleStar}
       />
 
-      {/* FAB */}
+      {/* FAB — hidden when panel open */}
       <button
         className={`add-task-fab${addOpen ? ' open' : ''}`}
-        onClick={() => setAddOpen((o) => !o)}
-        aria-label={addOpen ? 'Close' : 'Add task'}
+        onClick={() => setAddOpen(true)}
+        aria-label="Add task"
       >
         +
       </button>
 
-      {/* Add task panel backdrop */}
+      {/* Backdrop — closes panel when tapping outside */}
       {addOpen && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 98 }}

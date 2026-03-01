@@ -13,7 +13,7 @@ interface Props {
 const QUICK_DATES = [
   { label: 'Today', offset: 0 },
   { label: 'Tomorrow', offset: 1 },
-  { label: 'Weekend', offset: -1 }, // computed below
+  { label: 'Weekend', offset: -1 },
   { label: 'Next week', offset: 7 },
 ]
 
@@ -31,12 +31,25 @@ function getQuickDate(offset: number, label: string): Date {
   return d
 }
 
+// Format a Date to the value format required by datetime-local input
+function toDatetimeLocal(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 export function AddTask({ isOpen, onClose, onAdd, activeList, uid }: Props) {
   const [value, setValue] = useState('')
   const [list, setList] = useState<Exclude<ListId, 'today'>>(activeList)
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [manualDate, setManualDate] = useState<string>('') // datetime-local string
   const inputRef = useRef<HTMLInputElement>(null)
 
   const parsed = parseTaskInput(value)
+
+  // Resolved due date: manual picker takes priority over NL parsed
+  const resolvedDate: Date | null = manualDate
+    ? new Date(manualDate)
+    : parsed.dueDate
 
   useEffect(() => {
     if (isOpen) {
@@ -44,6 +57,8 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid }: Props) {
       setTimeout(() => inputRef.current?.focus(), 100)
     } else {
       setValue('')
+      setManualDate('')
+      setShowDatePicker(false)
     }
   }, [isOpen, activeList])
 
@@ -55,22 +70,20 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid }: Props) {
       listId: list,
       done: false,
       starred: false,
-      dueDate: parsed.dueDate ? parsed.dueDate.getTime() : undefined,
+      dueDate: resolvedDate ? resolvedDate.getTime() : undefined,
       createdAt: now,
       updatedAt: now,
     })
     setValue('')
+    setManualDate('')
+    setShowDatePicker(false)
     onClose()
   }
 
   const applyQuickDate = (label: string, offset: number) => {
     const d = getQuickDate(offset, label)
-    const formatted = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-    setValue((v) => {
-      const base = parseTaskInput(v).text
-      return `${base} ${label.toLowerCase()}`
-    })
-    inputRef.current?.focus()
+    setManualDate(toDatetimeLocal(d))
+    setShowDatePicker(true)
   }
 
   return (
@@ -94,14 +107,14 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid }: Props) {
 
       {/* Parsed date preview */}
       <div className="add-task-parsed">
-        {parsed.dueDate ? (
+        {resolvedDate ? (
           <span className="parsed-date">
-            {parsed.dueDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
+            {resolvedDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
             {' '}
-            {parsed.dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {resolvedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
         ) : value.length > 2 ? (
-          <span className="parsed-hint">no date detected</span>
+          <span className="parsed-hint">no date detected — pick one below</span>
         ) : (
           <span className="parsed-hint">type naturally — dates auto-detected</span>
         )}
@@ -112,13 +125,39 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid }: Props) {
         {QUICK_DATES.map(({ label, offset }) => (
           <button
             key={label}
-            className="list-tab"
+            className={`list-tab${manualDate && resolvedDate ? '' : ''}`}
             style={{ fontSize: 10 }}
             onClick={() => applyQuickDate(label, offset)}
           >
             {label}
           </button>
         ))}
+      </div>
+
+      {/* Manual datetime picker */}
+      <div className="add-task-datetime">
+        <button
+          className={`datetime-toggle${showDatePicker ? ' active' : ''}`}
+          onClick={() => setShowDatePicker((s) => !s)}
+        >
+          <span>{showDatePicker ? '▾' : '▸'}</span>
+          Pick date & time manually
+        </button>
+        {showDatePicker && (
+          <div className="datetime-input-row">
+            <input
+              type="datetime-local"
+              className="datetime-native"
+              value={manualDate}
+              onChange={(e) => setManualDate(e.target.value)}
+            />
+            {manualDate && (
+              <button className="datetime-clear" onClick={() => setManualDate('')} title="Clear date">
+                ✕
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Actions row */}
@@ -132,6 +171,10 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid }: Props) {
           <option value="work">Work</option>
           <option value="errands">Errands</option>
         </select>
+
+        <button className="add-task-cancel" onClick={onClose}>
+          Cancel
+        </button>
 
         <button
           className="add-task-submit"

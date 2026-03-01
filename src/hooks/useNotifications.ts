@@ -19,7 +19,18 @@ export function useNotifications(uid: string | null) {
       try {
         const messaging = await getMessagingInstance()
         if (!messaging) return
-        const token = await getToken(messaging, { vapidKey: VAPID_KEY })
+
+        // Get the already-registered service worker for this scope.
+        // FCM requires an explicit serviceWorkerRegistration when the app
+        // is served from a subpath (e.g. /Folio/) instead of root.
+        const swReg = await navigator.serviceWorker.getRegistration(
+          import.meta.env.BASE_URL
+        )
+        const tokenOptions = swReg
+          ? { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg }
+          : { vapidKey: VAPID_KEY }
+
+        const token = await getToken(messaging, tokenOptions)
         setFcmToken(token)
         await saveSettings(uid, { fcmToken: token })
       } catch (e) {
@@ -36,7 +47,7 @@ export function useNotifications(uid: string | null) {
         // Foreground message — show a local notification
         const { title = 'Folio', body = '' } = payload.notification ?? {}
         if (Notification.permission === 'granted') {
-          new Notification(title, { body, icon: '/Folio/pwa-192x192.png' })
+          new Notification(title, { body, icon: `${import.meta.env.BASE_URL}pwa-192x192.png` })
         }
       })
     })

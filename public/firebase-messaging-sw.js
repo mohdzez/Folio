@@ -1,12 +1,10 @@
 // Firebase Messaging Service Worker
 // This file is required for FCM background messages.
-// It is served at /firebase-messaging-sw.js
+// It is served at /Folio/firebase-messaging-sw.js
 
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
-// These values will be replaced during build/deployment
-// In production, use environment-specific values
 firebase.initializeApp({
   apiKey: self.FIREBASE_API_KEY || '__FIREBASE_API_KEY__',
   authDomain: self.FIREBASE_AUTH_DOMAIN || '__FIREBASE_AUTH_DOMAIN__',
