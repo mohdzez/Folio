@@ -19,7 +19,8 @@ import type { Task, AppSettings } from '../types'
 export function subscribeTasks(
   uid: string,
   listId: string | null,
-  callback: (tasks: Task[]) => void
+  callback: (tasks: Task[]) => void,
+  onError?: (err: any) => void
 ): Unsubscribe {
   const ref = collection(db, 'users', uid, 'tasks')
   const q =
@@ -35,7 +36,7 @@ export function subscribeTasks(
     },
     (error) => {
       console.error('Firestore tasks subscription error:', error)
-      // Don't wipe existing tasks on error — just log it
+      onError?.(error)
     }
   )
 }

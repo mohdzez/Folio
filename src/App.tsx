@@ -53,7 +53,10 @@ export default function App() {
   const activeListId = list === 'today' ? activeLists[0] ?? 'personal' : list
 
   const { tasks, allTasks, loading, addTask, toggleDone, removeTask, toggleStar, snoozeTask, patchTask } =
-    useTasks(user?.uid ?? null, list, filter)
+    useTasks(user?.uid ?? null, list, filter, (msg) => {
+      const id = Date.now()
+      setToasts((t) => [...t, { id, msg: `⚠️ ${msg}` }])
+    })
 
   // Subscribe to settings
   useEffect(() => {

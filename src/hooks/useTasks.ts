@@ -10,7 +10,7 @@ import { isToday, isOverdue, isUpcoming } from '../lib/parseDate'
 
 const QUEUE_KEY = 'folio_offline_queue'
 
-export function useTasks(uid: string | null, listId: string, filter: FilterView) {
+export function useTasks(uid: string | null, listId: string, filter: FilterView, onError?: (msg: string) => void) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -20,7 +20,12 @@ export function useTasks(uid: string | null, listId: string, filter: FilterView)
     const unsub = subscribeTasks(
       uid,
       listId === 'today' ? null : listId,
-      (t) => { setTasks(t); setLoading(false) }
+      (t) => { setTasks(t); setLoading(false) },
+      (err) => {
+        console.error('Firestore subscription error:', err)
+        onError?.(`Sync error: ${err.code ?? err.message}`)
+        setLoading(false)
+      }
     )
     // Fallback: if Firestore never responds (offline, error), stop loading after 5s
     const timeout = setTimeout(() => setLoading(false), 5000)
@@ -44,8 +49,9 @@ export function useTasks(uid: string | null, listId: string, filter: FilterView)
       try {
         const id = await createTask(uid, task)
         setTasks((prev) => prev.map((t) => (t.id === tempId ? { ...t, id } : t)))
-      } catch (e) {
+      } catch (e: any) {
         console.error('Failed to save task to Firestore:', e)
+        onError?.(`Save failed: ${e?.code ?? e?.message ?? 'unknown error'}`)
         const queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]')
         queue.push(task)
         localStorage.setItem(QUEUE_KEY, JSON.stringify(queue))

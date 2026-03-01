@@ -1,10 +1,8 @@
 import { initializeApp, getApps } from 'firebase/app'
 import { getAuth, browserLocalPersistence, setPersistence } from 'firebase/auth'
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore'
+import { initializeFirestore, persistentLocalCache, CACHE_SIZE_UNLIMITED } from 'firebase/firestore'
 import { getMessaging, isSupported } from 'firebase/messaging'
 
-// Replace with your Firebase project config
-// Get this from: Firebase Console → Project Settings → Your apps → Web app
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -17,16 +15,14 @@ const firebaseConfig = {
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig)
 
 export const auth = getAuth(app)
-export const db = getFirestore(app)
 
-// Explicitly set auth to persist in localStorage (survives app restarts)
+// Explicitly persist auth across app restarts (localStorage survives PWA close)
 setPersistence(auth, browserLocalPersistence).catch(console.error)
 
-// Enable Firestore offline persistence (caches tasks locally)
-enableIndexedDbPersistence(db).catch((err) => {
-  if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') {
-    console.error('Firestore persistence error:', err)
-  }
+// Initialize Firestore with persistent local cache (survives app restarts)
+// Using modern API (initializeFirestore) instead of deprecated enableIndexedDbPersistence
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ cacheSizeBytes: CACHE_SIZE_UNLIMITED }),
 })
 
 export const getMessagingInstance = async () => {
