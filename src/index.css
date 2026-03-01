@@ -167,13 +167,37 @@ body {
 /* ─── List Switcher ──────────────────────────────────────────────────────── */
 .list-switcher {
   display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+/* Fade edge hint so users know tabs scroll */
+.list-switcher::before {
+  content: '';
+  position: absolute;
+  right: 44px; /* just left of the calendar btn */
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  background: linear-gradient(to right, transparent, var(--bg));
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Scrollable tabs strip */
+.list-tabs-scroll {
+  display: flex;
   gap: 4px;
   padding: 10px 20px;
   overflow-x: auto;
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
   scrollbar-width: none;
-  border-bottom: 1px solid var(--border);
 }
+
+.list-tabs-scroll::-webkit-scrollbar { display: none; }
 
 .list-switcher::-webkit-scrollbar { display: none; }
 
@@ -1071,11 +1095,12 @@ body {
 
 /* ─── Calendar tab icon button ───────────────────────────────────────────── */
 .list-tab.calendar-tab {
-  padding: 8px 10px;
   flex-shrink: 0;
-  margin-left: auto;
+  padding: 8px 12px;
   border-left: 1px solid var(--border);
   border-radius: 0;
+  background: var(--bg);
+  z-index: 2; /* sits above the fade gradient */
 }
 
 /* ─── Calendar view ──────────────────────────────────────────────────────── */

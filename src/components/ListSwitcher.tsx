@@ -27,22 +27,25 @@ export function ListSwitcher({ active, tasks, activeLists, onChange, calendarMod
 
   return (
     <nav className="list-switcher" aria-label="Task lists">
-      {allLists.map((id) => {
-        const count = countForList(id)
-        return (
-          <button
-            key={id}
-            className={`list-tab${active === id && !calendarMode ? ' active' : ''}`}
-            onClick={() => { if (calendarMode) onCalendarToggle(); onChange(id) }}
-            aria-current={active === id && !calendarMode ? 'page' : undefined}
-          >
-            {capitalize(id)}
-            {count > 0 && <span className="count">{count}</span>}
-          </button>
-        )
-      })}
+      {/* Scrollable tabs area */}
+      <div className="list-tabs-scroll">
+        {allLists.map((id) => {
+          const count = countForList(id)
+          return (
+            <button
+              key={id}
+              className={`list-tab${active === id && !calendarMode ? ' active' : ''}`}
+              onClick={() => { if (calendarMode) onCalendarToggle(); onChange(id) }}
+              aria-current={active === id && !calendarMode ? 'page' : undefined}
+            >
+              {capitalize(id)}
+              {count > 0 && <span className="count">{count}</span>}
+            </button>
+          )
+        })}
+      </div>
 
-      {/* Calendar toggle */}
+      {/* Calendar toggle — pinned to the right, never scrolls away */}
       <button
         className={`list-tab calendar-tab${calendarMode ? ' active' : ''}`}
         onClick={onCalendarToggle}
