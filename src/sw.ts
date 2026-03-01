@@ -57,7 +57,7 @@ self.addEventListener('push', (event) => {
   const options: NotificationOptions = {
     body: data.body ?? '',
     icon: data.icon ?? '/Folio/pwa-192x192.png',
-    badge: '/Folio/pwa-192x192.png',
+    badge: '/Folio/badge-96x96.png', // monochrome white-on-transparent for Android status bar
     tag: data.tag ?? 'folio-task',
     // renotify: true, // Not in all TS lib versions
     data: { url: '/Folio/' },

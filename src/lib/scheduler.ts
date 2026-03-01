@@ -63,10 +63,11 @@ async function workerCancel(taskId: string) {
 
 async function showLocalNotification(taskId: string, title: string, body: string) {
   const icon = `${location.origin}/Folio/pwa-192x192.png`
+  const badge = `${location.origin}/Folio/badge-96x96.png` // monochrome for Android status bar
   const opts: NotificationOptions = {
     body,
     icon,
-    badge: icon,
+    badge,
     tag: `folio-${taskId}`,
     // @ts-ignore — `renotify` is valid but missing from older TS lib types
     renotify: true,
