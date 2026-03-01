@@ -1,124 +1,222 @@
-# folio.
+<p align="center">
+  <img src="docs/images/banner.svg" alt="folio. — task management PWA" width="100%"/>
+</p>
 
-> A minimal offline-first personal task PWA. Speed over everything.
+<p align="center">
+  <a href="https://munimx.github.io/Folio/"><strong>→ Live App</strong></a>
+  &nbsp;·&nbsp;
+  <a href="#quick-start">Setup</a>
+  &nbsp;·&nbsp;
+  <a href="#architecture">Architecture</a>
+  &nbsp;·&nbsp;
+  <a href="#features">Features</a>
+</p>
 
-**Stack:** React + TypeScript + Vite · Firebase Auth/Firestore/FCM · GitHub Pages · Cloudflare CDN
+<p align="center">
+  <img src="https://img.shields.io/badge/PWA-installable-d4a853?style=flat-square&logo=pwa&logoColor=black" alt="PWA"/>
+  <img src="https://img.shields.io/badge/offline--first-✓-d4a853?style=flat-square" alt="Offline"/>
+  <img src="https://img.shields.io/badge/hosting-free-d4a853?style=flat-square" alt="Free hosting"/>
+  <img src="https://img.shields.io/badge/React-TypeScript-d4a853?style=flat-square&logo=react&logoColor=black" alt="React TypeScript"/>
+  <img src="https://img.shields.io/badge/Firebase-Firestore-d4a853?style=flat-square&logo=firebase&logoColor=black" alt="Firebase"/>
+</p>
 
 ---
 
-## Quick Start
+## Screenshots
 
-### 1. Firebase Project Setup
+<p align="center">
+  <img src="docs/images/screenshot-main.svg" width="200" alt="Task list view"/>
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/images/screenshot-addtask.svg" width="200" alt="Add task with NL parsing"/>
+</p>
 
-```bash
-# Install Firebase CLI (already installed if you have it)
-npm install -g firebase-tools
+<p align="center">
+  <sub>Dark theme · Natural language date parsing · Swipe gestures · Push notifications</sub>
+</p>
 
-# Login
-firebase login
+---
 
-# Create a new project (or use existing)
-firebase projects:create folio-pwa-yourname
+## What It Is
 
-# Initialize (select Firestore + Hosting)
-firebase use folio-pwa-yourname
-firebase init firestore
-firebase deploy --only firestore:rules,firestore:indexes
-```
+**folio.** is a speed-first, offline-capable personal task manager built as a PWA. No account required, installs on any home screen, works without internet, syncs across devices when online.
 
-Then go to **Firebase Console → Project Settings → Your apps → Add web app** and copy your config values.
+> *The default view should look almost empty. Power lives one tap beneath the surface.*
 
-### 2. Environment Variables
+The core interaction: open the app, type `"Call dentist thursday 9am remind 15min before"` — folio parses the date, sets the reminder, and gets out of your way in under 3 seconds.
 
-```bash
-cp .env.example .env.local
-# Fill in all VITE_FIREBASE_* values from your Firebase web app config
-```
+---
 
-**FCM VAPID Key:** Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Generate key pair
+## Features
 
-### 3. Local Development
-
-```bash
-npm install
-npm run dev
-```
-
-### 4. Deploy to GitHub Pages (Free)
-
-1. Push this repo to GitHub
-2. Go to **Settings → Secrets and variables → Actions** and add all `VITE_FIREBASE_*` secrets
-3. Go to **Settings → Pages** → Source: **GitHub Actions**
-4. Push to `main` — the workflow deploys automatically
-
-Your app will be live at: `https://yourusername.github.io/folio-pwa/`
-
-### 5. Cloudflare CDN (Free)
-
-**Option A: Cloudflare Pages (recommended — replaces GitHub Pages)**
-```bash
-# Login to Cloudflare
-wrangler login
-
-# Deploy
-wrangler pages deploy dist --project-name=folio-pwa
-```
-Then in Cloudflare Dashboard: Pages → folio-pwa → Settings → Environment variables → add all secrets.
-
-**Option B: Cloudflare in front of GitHub Pages**
-1. Add your domain to Cloudflare
-2. Point CNAME to `yourusername.github.io`
-3. Enable SSL/TLS: Full (strict)
-4. Add Page Rule: `yourdomain.com/folio-pwa/*` → Cache Level: Standard
+| | Feature | Detail |
+|---|---|---|
+| ⚡ | **Natural language input** | `"Buy groceries tomorrow 6pm"` → parsed automatically via chrono-node |
+| 👆 | **Swipe gestures** | Right to complete · Left to delete · Hold to snooze |
+| 📋 | **Multiple lists** | Personal · Work · Errands — switchable from tab bar |
+| 🔍 | **Smart views** | Today · Upcoming · Overdue filters |
+| 🔔 | **Push notifications** | Works when app is closed (Cloudflare Worker + FCM v1 API) |
+| 📝 | **Rich notes** | Per-task notes with headings, bullets, checklists |
+| 🔄 | **Recurring tasks** | Daily / weekly auto-creates next occurrence on completion |
+| 📅 | **Custom reminders** | Set reminder at specific date & time per task |
+| 📴 | **Offline-first** | Full functionality without internet; syncs on reconnect |
+| 🔁 | **Firestore sync** | Real-time cross-device sync via Firebase |
+| 🔓 | **No account required** | Anonymous auth by default; optional Google sign-in |
+| 🌗 | **Dark / Light mode** | Follows system preference or manual toggle |
+| 📲 | **PWA installable** | Add to home screen on Android & iOS |
+| ⭐ | **Starred tasks** | Priority flag, always visible |
+| ↩️ | **Double-tap to add** | Anywhere on the screen opens the add panel |
 
 ---
 
 ## Architecture
 
 ```
-src/
-├── components/
-│   ├── TaskItem.tsx      # Swipeable task row
-│   ├── TaskList.tsx      # Grouped task list
-│   ├── AddTask.tsx       # Bottom sheet with NL date parsing
-│   ├── ListSwitcher.tsx  # Tab bar for Personal/Work/Errands/Today
-│   ├── FilterBar.tsx     # All/Today/Upcoming/Overdue filters
-│   └── Settings.tsx      # Settings drawer
-├── hooks/
-│   ├── useAuth.ts        # Firebase Auth (anonymous + Google)
-│   ├── useTasks.ts       # Firestore CRUD + optimistic updates
-│   └── useNotifications.ts # FCM push permission + foreground handler
-├── lib/
-│   ├── firebase.ts       # Firebase app init
-│   ├── firestore.ts      # Firestore helpers
-│   └── parseDate.ts      # chrono-node NL date parsing
-├── types/index.ts        # Shared TypeScript types
-├── sw.ts                 # Custom service worker (Workbox + FCM)
-└── App.tsx               # Root component
+┌─────────────────────────────────────────────────────────────┐
+│  GitHub Pages  (static hosting — free)                       │
+│    React + TypeScript + Vite PWA                             │
+│    Service Worker: Workbox precache + FCM background push    │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+          ┌────────────┴────────────┐
+          │                         │
+   ┌──────▼──────┐         ┌────────▼────────┐
+   │  Firebase   │         │  Cloudflare     │
+   │  Auth       │         │  Worker         │
+   │  Firestore  │         │  (push notifs   │
+   │  FCM        │         │   when closed)  │
+   └─────────────┘         └─────────────────┘
 ```
 
-## Features
+```
+src/
+├── components/
+│   ├── TaskItem.tsx        Swipeable task row with gesture detection
+│   ├── TaskList.tsx        Grouped/sectioned task list
+│   ├── AddTask.tsx         Bottom-sheet input with NL date parsing
+│   ├── ListSwitcher.tsx    Tab bar (Personal/Work/Errands/Today)
+│   ├── FilterBar.tsx       All/Today/Upcoming/Overdue filters
+│   ├── NoteEditor.tsx      Rich notes editor (headings, bullets, checklists)
+│   ├── DateTimePicker.tsx  Custom date & time picker
+│   └── Settings.tsx        Settings drawer
+├── hooks/
+│   ├── useAuth.ts          Firebase Auth (anonymous + Google sign-in)
+│   └── useTasks.ts         Firestore CRUD + optimistic updates
+├── lib/
+│   ├── firebase.ts         Firebase init with persistent local cache
+│   ├── firestore.ts        Firestore helpers
+│   ├── parseDate.ts        chrono-node NL date parsing
+│   └── scheduler.ts        Dual-mode notification scheduler (local + Worker)
+├── types/index.ts          Shared TypeScript types
+├── sw.ts                   Service worker (Workbox + FCM push handler)
+└── App.tsx                 Root component
+workers/
+└── notifier/               Cloudflare Worker — FCM v1 push when app is closed
+    └── src/index.ts        KV task store · cron every minute · REST endpoints
+```
 
-| Feature | Status |
-|---|---|
-| Add tasks with natural language dates | ✅ |
-| Swipe right to complete | ✅ |
-| Swipe left to delete | ✅ |
-| Personal / Work / Errands lists | ✅ |
-| Today / Upcoming / Overdue views | ✅ |
-| Dark / Light mode | ✅ |
-| Offline-first (service worker) | ✅ |
-| Firebase Firestore sync | ✅ |
-| Anonymous auth (no sign-in required) | ✅ |
-| Google sign-in (optional) | ✅ |
-| PWA installable (Android + iOS) | ✅ |
-| Push notifications via FCM | ✅ |
-| Starred tasks | ✅ |
-| Quick date presets (Today/Tomorrow/Weekend) | ✅ |
-| Subtasks (expandable) | ✅ |
+---
+
+## Quick Start
+
+### 1. Clone & Install
+
+```bash
+git clone https://github.com/munimx/Folio.git
+cd Folio
+npm install
+```
+
+### 2. Firebase Setup
+
+```bash
+# Install Firebase CLI
+npm install -g firebase-tools
+firebase login
+
+# Deploy Firestore rules & indexes
+firebase use folio-munimx   # or your project ID
+firebase deploy --only firestore:rules,firestore:indexes
+```
+
+Go to **Firebase Console → Project Settings → Your apps → Add web app** and copy your config.
+
+### 3. Environment Variables
+
+Create `.env` in the project root:
+
+```env
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_VAPID_KEY=
+VITE_WORKER_URL=https://your-worker.workers.dev
+VITE_WORKER_API_KEY=your-api-key
+```
+
+**VAPID key:** Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Generate key pair
+
+### 4. Run Locally
+
+```bash
+npm run dev
+# → http://localhost:5173/Folio/
+```
+
+### 5. Deploy to GitHub Pages (Free)
+
+1. Push repo to GitHub
+2. **Settings → Secrets → Actions** — add all `VITE_FIREBASE_*` secrets
+3. **Settings → Pages** → Source: **GitHub Actions**
+4. Push to `main` — deploys automatically
+
+Live at: `https://yourusername.github.io/Folio/`
+
+### 6. Cloudflare Worker (Push notifications when app is closed)
+
+```bash
+cd workers/notifier
+npm install
+
+# Set secrets
+wrangler secret put API_KEY
+wrangler secret put FIREBASE_CLIENT_EMAIL
+wrangler secret put FIREBASE_PRIVATE_KEY
+wrangler secret put FIREBASE_PROJECT_ID
+
+# Deploy
+wrangler deploy
+```
+
+---
 
 ## Design
 
-**Obsidian Canvas** — Near-black background, warm amber accent, JetBrains Mono typeface. The default view is almost empty. Power lives one tap beneath the surface.
+**Obsidian Canvas** — Near-black `#0c0c0c` background, warm amber `#d4a853` accent, Georgia serif logotype, JetBrains Mono for data. The UI has one rule: *the default view should look almost empty*. The amber `+` button is the only colored element on a fresh screen.
 
-> The `+` button is the only colored element you'll see on a fresh screen.
+Every advanced feature — reminders, notes, recurrence, subtasks — is one tap away and invisible until needed.
+
+---
+
+## Tech Stack
+
+| Layer | Tool | Cost |
+|---|---|---|
+| Hosting | GitHub Pages | Free |
+| Auth | Firebase Auth (anonymous + Google) | Free tier |
+| Database | Firestore (offline-persistent) | Free tier |
+| Push | Firebase Cloud Messaging v1 API | Free |
+| Background push | Cloudflare Worker + KV + cron | Free tier |
+| Build | Vite + vite-plugin-pwa | — |
+| Parsing | chrono-node (NL dates) | — |
+
+**Total hosting cost: $0**
+
+---
+
+<p align="center">
+  <sub>Built with ♥ · MIT License</sub>
+</p>
+

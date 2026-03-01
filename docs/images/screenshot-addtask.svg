@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <rect width="390" height="844" fill="#0c0c0c"/>
+
+  <!-- Status bar -->
+  <text x="24" y="28" font-family="'Courier New', monospace" font-size="11" fill="#ffffff" opacity="0.4">9:41</text>
+
+  <!-- Header -->
+  <line x1="0" y1="44" x2="390" y2="44" stroke="#ffffff" stroke-width="0.5" opacity="0.06"/>
+  <text x="24" y="84" font-family="Georgia, 'Times New Roman', serif" font-size="36" font-style="italic" fill="#f0ebe3" opacity="0.95">folio<tspan fill="#d4a853">.</tspan></text>
+  <rect x="314" y="66" width="54" height="22" rx="11" fill="none" stroke="#d4a853" stroke-width="1" opacity="0.5"/>
+  <circle cx="325" cy="77" r="3.5" fill="#d4a853" opacity="0.6"/>
+  <text x="332" y="81" font-family="'Courier New', monospace" font-size="9" fill="#d4a853" opacity="0.8">guest</text>
+
+  <!-- Add task panel (bottom sheet open) -->
+  <rect x="0" y="320" width="390" height="524" rx="0" fill="#141414"/>
+  <rect x="0" y="320" width="390" height="2" fill="#d4a853" opacity="0.3"/>
+
+  <!-- Drag handle -->
+  <rect x="170" y="330" width="50" height="4" rx="2" fill="#ffffff" opacity="0.12"/>
+
+  <!-- Panel title -->
+  <text x="24" y="372" font-family="Georgia, serif" font-size="20" font-style="italic" fill="#f0ebe3" opacity="0.9">New task</text>
+
+  <!-- Task input field -->
+  <rect x="24" y="388" width="342" height="52" rx="8" fill="#1a1a1a"/>
+  <text x="40" y="417" font-family="Georgia, serif" font-size="16" fill="#f0ebe3" opacity="0.8">Call dentist thursday 9am</text>
+  <!-- Cursor blink -->
+  <rect x="270" y="404" width="2" height="18" fill="#d4a853" opacity="0.8"/>
+
+  <!-- Parsed preview -->
+  <rect x="24" y="448" width="342" height="36" rx="6" fill="#1e1a14"/>
+  <text x="40" y="471" font-family="'Courier New', monospace" font-size="11" fill="#d4a853" opacity="0.8">📅  Thursday · 9:00 AM  ·  remind 15min before</text>
+
+  <!-- Options row -->
+  <text x="24" y="512" font-family="'Courier New', monospace" font-size="9" fill="#ffffff" opacity="0.2" letter-spacing="3">OPTIONS</text>
+  <line x1="24" y1="518" x2="366" y2="518" stroke="#ffffff" stroke-width="0.5" opacity="0.06"/>
+
+  <!-- Option chips -->
+  <rect x="24" y="528" width="68" height="28" rx="6" fill="#1a1a1a"/>
+  <text x="36" y="547" font-family="'Courier New', monospace" font-size="9" fill="#d4a853" letter-spacing="1">LIST ▾</text>
+
+  <rect x="100" y="528" width="90" height="28" rx="6" fill="#1a1a1a"/>
+  <text x="112" y="547" font-family="'Courier New', monospace" font-size="9" fill="#ffffff" opacity="0.5" letter-spacing="1">REMIND ▾</text>
+
+  <rect x="198" y="528" width="80" height="28" rx="6" fill="#1a1a1a"/>
+  <text x="210" y="547" font-family="'Courier New', monospace" font-size="9" fill="#ffffff" opacity="0.5" letter-spacing="1">REPEAT ▾</text>
+
+  <rect x="286" y="528" width="56" height="28" rx="6" fill="#1a1a1a"/>
+  <text x="298" y="547" font-family="'Courier New', monospace" font-size="9" fill="#ffffff" opacity="0.5" letter-spacing="1">NOTE</text>
+
+  <!-- Quick date presets -->
+  <text x="24" y="584" font-family="'Courier New', monospace" font-size="9" fill="#ffffff" opacity="0.2" letter-spacing="3">QUICK DATE</text>
+  <line x1="24" y1="590" x2="366" y2="590" stroke="#ffffff" stroke-width="0.5" opacity="0.06"/>
+
+  <rect x="24" y="600" width="70" height="28" rx="6" fill="#1e1a14" stroke="#d4a853" stroke-width="0.5" opacity="0.4"/>
+  <text x="36" y="619" font-family="'Courier New', monospace" font-size="9" fill="#d4a853" opacity="0.8">TODAY</text>
+
+  <rect x="102" y="600" width="84" height="28" rx="6" fill="#1a1a1a"/>
+  <text x="114" y="619" font-family="'Courier New', monospace" font-size="9" fill="#ffffff" opacity="0.4">TOMORROW</text>
+
+  <rect x="194" y="600" width="84" height="28" rx="6" fill="#1a1a1a"/>
+  <text x="204" y="619" font-family="'Courier New', monospace" font-size="9" fill="#ffffff" opacity="0.4">WEEKEND</text>
+
+  <rect x="286" y="600" width="80" height="28" rx="6" fill="#1a1a1a"/>
+  <text x="298" y="619" font-family="'Courier New', monospace" font-size="9" fill="#ffffff" opacity="0.4">NEXT WEEK</text>
+
+  <!-- Keyboard hint -->
+  <rect x="0" y="668" width="390" height="176" fill="#1c1c1e"/>
+  <!-- Keyboard rows (simplified) -->
+  <g font-family="'Courier New', monospace" font-size="14" fill="#ffffff" opacity="0.7" text-anchor="middle">
+    <text x="39" y="704">q</text><text x="78" y="704">w</text><text x="117" y="704">e</text>
+    <text x="156" y="704">r</text><text x="195" y="704">t</text><text x="234" y="704">y</text>
+    <text x="273" y="704">u</text><text x="312" y="704">i</text><text x="351" y="704">o</text>
+    <text x="39" y="738">a</text><text x="78" y="738">s</text><text x="117" y="738">d</text>
+    <text x="156" y="738">f</text><text x="195" y="738">g</text><text x="234" y="738">h</text>
+    <text x="273" y="738">j</text><text x="312" y="738">k</text><text x="351" y="738">l</text>
+  </g>
+
+  <!-- Save button (amber, prominent) -->
+  <rect x="24" y="656" width="342" height="44" rx="10" fill="#d4a853"/>
+  <text x="195" y="684" font-family="'Courier New', monospace" font-size="13" fill="#0a0a0a" text-anchor="middle" letter-spacing="3">SAVE TASK</text>
+
+  <!-- Home indicator -->
+  <rect x="155" y="824" width="80" height="4" rx="2" fill="#ffffff" opacity="0.15"/>
+</svg>
