@@ -271,7 +271,9 @@ export default function App() {
             tabIndex={0}
           >
             <span className="dot" />
-            {user && !user.isAnonymous ? 'synced' : 'guest'}
+            {user && !user.isAnonymous
+              ? 'synced'
+              : `guest·${user?.uid?.slice(-4) ?? '…'}`}
           </div>
           <button
             className={`icon-btn${settingsOpen ? ' active' : ''}`}
