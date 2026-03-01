@@ -16,33 +16,29 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Listen for auth state changes
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u)
-      setLoading(false)
+    // Handle any pending redirect sign-in result (runs in parallel, doesn't block)
+    getRedirectResult(auth).catch((e) => console.error('Redirect result error:', e))
+
+    // Canonical Firebase Auth pattern: respond to auth state in onAuthStateChanged.
+    // Firebase fires this exactly once on startup — with the persisted user (if any)
+    // or with null (no user / first visit / explicit sign-out).
+    // Calling signInAnonymously here is SAFE because onAuthStateChanged(null) only
+    // fires when there is genuinely no authenticated user, never due to a race.
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      if (u) {
+        setUser(u)
+        setLoading(false)
+      } else {
+        // Truly no user — create an anonymous session
+        try {
+          await signInAnonymously(auth)
+          // onAuthStateChanged will fire again with the new anonymous user
+        } catch (e) {
+          console.error('Anonymous sign-in failed:', e)
+          setLoading(false)
+        }
+      }
     })
-
-    // On mount: wait for Firebase Auth to finish loading stored credentials
-    // BEFORE checking currentUser. Without authStateReady(), currentUser is
-    // null during the async IndexedDB load and we'd incorrectly create a new
-    // anonymous session (losing all tasks saved under the real UID).
-    const init = async () => {
-      try {
-        // Wait for Firebase Auth to restore the persisted session
-        await auth.authStateReady()
-
-        // Check for any pending redirect sign-in result
-        const result = await getRedirectResult(auth)
-        if (result?.user) return // onAuthStateChanged will fire with the Google user
-      } catch (e) {
-        console.error('Auth init error:', e)
-      }
-      // Only sign in anonymously if still no user after credentials are loaded
-      if (!auth.currentUser) {
-        await signInAnonymously(auth).catch(console.error)
-      }
-    }
-    init()
 
     return unsub
   }, [])
@@ -65,7 +61,7 @@ export function useAuth() {
 
   const handleSignOut = async () => {
     await signOut(auth)
-    await signInAnonymously(auth)
+    // onAuthStateChanged will fire with null → auto-creates anonymous session
   }
 
   return { user, loading, signInWithGoogle, signOut: handleSignOut }
