@@ -22,8 +22,8 @@ messaging.onBackgroundMessage((payload) => {
   const { title = 'Folio', body = '' } = payload.notification || {};
   self.registration.showNotification(title, {
     body,
-    icon: '/folio-pwa/pwa-192x192.png',
-    badge: '/folio-pwa/pwa-192x192.png',
+    icon: '/Folio/pwa-192x192.png',
+    badge: '/Folio/pwa-192x192.png',
     tag: 'folio-task',
     data: payload.data,
   });

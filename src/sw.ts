@@ -56,11 +56,11 @@ self.addEventListener('push', (event) => {
   const title = data.title ?? 'Folio'
   const options: NotificationOptions = {
     body: data.body ?? '',
-    icon: data.icon ?? '/folio-pwa/pwa-192x192.png',
-    badge: '/folio-pwa/pwa-192x192.png',
+    icon: data.icon ?? '/Folio/pwa-192x192.png',
+    badge: '/Folio/pwa-192x192.png',
     tag: data.tag ?? 'folio-task',
     // renotify: true, // Not in all TS lib versions
-    data: { url: '/folio-pwa/' },
+    data: { url: '/Folio/' },
     // actions are supported on Android/Chrome but not in TS NotificationOptions type
     // actions: [{ action: 'open', title: 'Open' }, { action: 'snooze', title: 'Snooze 1h' }],
   }
@@ -77,7 +77,7 @@ self.addEventListener('notificationclick', (event) => {
     return
   }
 
-  const url = (event.notification.data as { url?: string })?.url ?? '/folio-pwa/'
+  const url = (event.notification.data as { url?: string })?.url ?? '/Folio/'
   event.waitUntil(
     (self.clients as Clients).matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
       for (const client of clients) {

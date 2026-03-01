@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  base: '/folio-pwa/',
+  base: '/Folio/',
   build: {
     rollupOptions: {
       output: {
@@ -37,8 +37,8 @@ export default defineConfig({
         background_color: '#080808',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/folio-pwa/',
-        scope: '/folio-pwa/',
+        start_url: '/Folio/',
+        scope: '/Folio/',
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -58,7 +58,7 @@ export default defineConfig({
             name: 'Add Task',
             short_name: 'Add',
             description: 'Quickly add a new task',
-            url: '/folio-pwa/?action=add',
+            url: '/Folio/?action=add',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }],
           },
         ],

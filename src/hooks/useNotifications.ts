@@ -36,7 +36,7 @@ export function useNotifications(uid: string | null) {
         // Foreground message — show a local notification
         const { title = 'Folio', body = '' } = payload.notification ?? {}
         if (Notification.permission === 'granted') {
-          new Notification(title, { body, icon: '/folio-pwa/pwa-192x192.png' })
+          new Notification(title, { body, icon: '/Folio/pwa-192x192.png' })
         }
       })
     })
