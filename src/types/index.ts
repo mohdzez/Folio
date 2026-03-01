@@ -12,6 +12,7 @@ export interface Task {
   starred: boolean
   dueDate?: number // unix ms
   reminderLeadTime?: number // minutes before due (overrides global setting)
+  reminderAt?: number // absolute reminder timestamp (overrides reminderLeadTime)
   recurring?: 'daily' | 'weekly' | null
   subtasks?: SubTask[]
   note?: string

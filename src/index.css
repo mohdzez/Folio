@@ -1735,6 +1735,34 @@ body {
   color: var(--text-dim);
 }
 
+.reminder-section {
+  margin-top: 6px;
+}
+
+.reminder-mode-toggle {
+  display: flex;
+  gap: 4px;
+}
+
+.reminder-mode-btn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-2);
+  background: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.reminder-mode-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
 .reminder-select {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -1746,6 +1774,59 @@ body {
   outline: none;
   cursor: pointer;
 }
+
+.reminder-select-full {
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px 10px;
+}
+
+.reminder-at-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.reminder-at-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  color: var(--text-muted);
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  flex: 1;
+}
+
+.reminder-at-btn.active,
+.reminder-at-btn:has(+ .reminder-clear-btn) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.reminder-clear-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.reminder-clear-btn:hover { color: var(--text); }
 
 /* Note expand in TaskItem */
 .task-note {

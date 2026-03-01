@@ -28,6 +28,9 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
   const [list, setList]               = useState<string>(activeList)
   const [dueDate, setDueDate]         = useState<Date | null>(null)
   const [reminderMins, setReminderMins] = useState<number>(-1)
+  const [reminderMode, setReminderMode] = useState<'before' | 'at'>('before')
+  const [reminderAt, setReminderAt]   = useState<Date | null>(null)
+  const [showReminderPicker, setShowReminderPicker] = useState(false)
   const [recurring, setRecurring]     = useState<'daily' | 'weekly' | null>(null)
   const [showPicker, setShowPicker]   = useState(false)
   const [showNote, setShowNote]       = useState(false)
@@ -38,11 +41,12 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
   // Resolved due: manual picker takes priority over NL-parsed
   const resolvedDate = dueDate ?? parsed.dueDate
 
-  // Resolved reminder: NL-parsed takes priority over manual select (unless -1)
+  // Resolved reminder: NL-parsed takes priority; then mode-based
   const resolvedReminder =
     parsed.reminderLeadTime !== null ? parsed.reminderLeadTime
-    : reminderMins === -1 ? null
-    : reminderMins
+    : reminderMode === 'before' && reminderMins === -1 ? null
+    : reminderMode === 'before' ? reminderMins
+    : null // 'at' mode uses reminderAt instead
 
   const [keyboardOffset, setKeyboardOffset] = useState(0)
 
@@ -72,6 +76,9 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
       setNote('')
       setDueDate(null)
       setReminderMins(-1)
+      setReminderMode('before')
+      setReminderAt(null)
+      setShowReminderPicker(false)
       setRecurring(null)
       setShowNote(false)
       setShowPicker(false)
@@ -88,6 +95,7 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
       starred: false,
       dueDate: resolvedDate ? resolvedDate.getTime() : undefined,
       reminderLeadTime: resolvedReminder ?? undefined,
+      reminderAt: reminderMode === 'at' && reminderAt ? reminderAt.getTime() : undefined,
       recurring: recurring ?? undefined,
       note: note.trim() || undefined,
       createdAt: now,
@@ -173,8 +181,8 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
           )}
         </div>
 
-        {/* Reminder row — only visible when there's a due date */}
-        {resolvedDate && (
+        {/* Reminder section — always visible */}
+        <div className="reminder-section">
           <div className="reminder-row">
             <span className="reminder-label">Remind</span>
             {parsed.reminderLeadTime !== null ? (
@@ -182,20 +190,73 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
                 {parsed.reminderLeadTime} min before (from text)
               </span>
             ) : (
-              <select
-                className="reminder-select"
-                value={reminderMins}
-                onChange={(e) => setReminderMins(Number(e.target.value))}
-              >
-                {REMINDER_OPTIONS.map(o => (
-                  <option key={o.value} value={o.value}>
-                    {o.value === -1 ? `default (${defaultReminderLeadTime} min)` : o.label}
-                  </option>
-                ))}
-              </select>
+              <div className="reminder-mode-toggle">
+                <button
+                  className={`reminder-mode-btn${reminderMode === 'before' ? ' active' : ''}`}
+                  onClick={() => { setReminderMode('before'); setShowReminderPicker(false) }}
+                >
+                  Before due
+                </button>
+                <button
+                  className={`reminder-mode-btn${reminderMode === 'at' ? ' active' : ''}`}
+                  onClick={() => setReminderMode('at')}
+                >
+                  Specific time
+                </button>
+              </div>
             )}
           </div>
-        )}
+
+          {parsed.reminderLeadTime === null && reminderMode === 'before' && (
+            <select
+              className="reminder-select reminder-select-full"
+              value={reminderMins}
+              onChange={(e) => setReminderMins(Number(e.target.value))}
+            >
+              <option value={-1}>No reminder</option>
+              {REMINDER_OPTIONS.filter(o => o.value !== -1).map(o => (
+                <option key={o.value} value={o.value}>
+                  {resolvedDate
+                    ? `${o.label} before (${new Date(resolvedDate.getTime() - o.value * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`
+                    : o.label}
+                </option>
+              ))}
+              <option value={defaultReminderLeadTime}>Default ({defaultReminderLeadTime} min)</option>
+            </select>
+          )}
+
+          {parsed.reminderLeadTime === null && reminderMode === 'at' && (
+            <div className="reminder-at-row">
+              <button
+                className={`reminder-at-btn${showReminderPicker ? ' active' : ''}`}
+                onClick={() => setShowReminderPicker(s => !s)}
+              >
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                  <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2"/>
+                  <path d="M7 4v3.5l2 1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                </svg>
+                {reminderAt
+                  ? reminderAt.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                  : 'Pick date & time'}
+              </button>
+              {reminderAt && (
+                <button
+                  className="reminder-clear-btn"
+                  onClick={() => { setReminderAt(null); setShowReminderPicker(false) }}
+                  title="Clear reminder"
+                >✕</button>
+              )}
+            </div>
+          )}
+
+          {showReminderPicker && reminderMode === 'at' && (
+            <DateTimePicker
+              value={reminderAt}
+              onChange={(d) => { setReminderAt(d); setShowReminderPicker(false) }}
+              onClose={() => setShowReminderPicker(false)}
+            />
+          )}
+        </div>
 
         {/* Spacer */}
         <div style={{ height: 14 }} />
