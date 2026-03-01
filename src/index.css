@@ -585,14 +585,17 @@ body {
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   padding: 20px 20px calc(var(--safe-bottom) + 28px);
   z-index: 99;
-  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), bottom 0.15s ease;
   transform: translateY(100%);
+  /* Keyboard avoidance: translate up by keyboard height */
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
   overflow-y: auto;
   overscroll-behavior: contain;
+  max-height: calc(var(--vvh, 100dvh) - 60px);
+  /* Use translateY for keyboard offset so it combines cleanly with slide animation */
 }
 
 .add-task-panel.open {
-  transform: translateY(0);
+  transform: translateY(calc(-1 * var(--keyboard-height, 0px)));
 }
 
 .panel-handle {
@@ -1857,7 +1860,7 @@ body {
   }
 
   .add-task-panel.open {
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(-50%) translateY(calc(-1 * var(--keyboard-height, 0px)));
   }
 
   .dtp-panel {

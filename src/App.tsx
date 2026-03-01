@@ -54,6 +54,30 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', settings.theme)
   }, [settings.theme])
 
+  // Global visual viewport tracker — sets --keyboard-height CSS variable
+  // Works on both iOS (where window.innerHeight shrinks) and Android (where it doesn't)
+  useEffect(() => {
+    const root = document.documentElement
+    const vv = window.visualViewport
+    const update = () => {
+      if (!vv) return
+      // document.documentElement.clientHeight is stable and excludes browser chrome
+      const docH  = root.clientHeight
+      // visible area top + visible height = how much is actually on screen
+      const visibleBottom = vv.offsetTop + vv.height
+      const kbHeight = Math.max(0, docH - visibleBottom)
+      root.style.setProperty('--keyboard-height', `${kbHeight}px`)
+      root.style.setProperty('--vvh', `${vv.height}px`)
+    }
+    vv?.addEventListener('resize', update)
+    vv?.addEventListener('scroll', update)
+    update()
+    return () => {
+      vv?.removeEventListener('resize', update)
+      vv?.removeEventListener('scroll', update)
+    }
+  }, [])
+
   // URL shortcut ?action=add
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)

@@ -50,29 +50,12 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
     : reminderMode === 'before' ? reminderMins
     : null // 'at' mode uses reminderAt instead
 
-  const [keyboardOffset, setKeyboardOffset] = useState(0)
-
-  // Track visual viewport to keep panel above keyboard
-  useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv) return
-    const update = () => {
-      const offset = window.innerHeight - vv.height - vv.offsetTop
-      setKeyboardOffset(Math.max(0, offset))
-    }
-    vv.addEventListener('resize', update)
-    vv.addEventListener('scroll', update)
-    update()
-    return () => {
-      vv.removeEventListener('resize', update)
-      vv.removeEventListener('scroll', update)
-    }
-  }, [])
-
   useEffect(() => {
     if (isOpen) {
       setList(activeList)
-      setTimeout(() => inputRef.current?.focus(), 80)
+      // Delay focus until after panel slide-in animation completes (300ms)
+      // so keyboard opens when panel is already in final position
+      setTimeout(() => inputRef.current?.focus(), 320)
     } else {
       setValue('')
       setNote('')
@@ -119,7 +102,6 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
         className={`add-task-panel${isOpen ? ' open' : ''}`}
         role="dialog"
         aria-modal="true"
-        style={{ bottom: keyboardOffset, maxHeight: `calc(${window.visualViewport?.height ?? window.innerHeight}px - 60px)` }}
       >
         <div className="panel-handle" />
 
