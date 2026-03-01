@@ -357,6 +357,10 @@ body {
   pointer-events: none;
 }
 
+.task-action-bg.tray-open {
+  pointer-events: auto;
+}
+
 .task-action-bg.left {
   background: var(--success-dim);
   justify-content: flex-start;
