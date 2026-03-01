@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import type { ListId, Task } from '../types'
+import type { Task } from '../types'
 import { parseTaskInput } from '../lib/parseDate'
 import { DateTimePicker } from './DateTimePicker'
 
@@ -7,9 +7,10 @@ interface Props {
   isOpen: boolean
   onClose: () => void
   onAdd: (task: Omit<Task, 'id'>) => void
-  activeList: Exclude<ListId, 'today'>
+  activeList: string
   uid: string
   defaultReminderLeadTime: number
+  activeLists: string[]
 }
 
 const REMINDER_OPTIONS = [
@@ -21,12 +22,13 @@ const REMINDER_OPTIONS = [
   { label: '1 day', value: 1440 },
 ]
 
-export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultReminderLeadTime }: Props) {
+export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultReminderLeadTime, activeLists }: Props) {
   const [value, setValue]             = useState('')
   const [note, setNote]               = useState('')
-  const [list, setList]               = useState<Exclude<ListId, 'today'>>(activeList)
+  const [list, setList]               = useState<string>(activeList)
   const [dueDate, setDueDate]         = useState<Date | null>(null)
-  const [reminderMins, setReminderMins] = useState<number>(-1) // -1 = use default
+  const [reminderMins, setReminderMins] = useState<number>(-1)
+  const [recurring, setRecurring]     = useState<'daily' | 'weekly' | null>(null)
   const [showPicker, setShowPicker]   = useState(false)
   const [showNote, setShowNote]       = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -51,6 +53,7 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
       setNote('')
       setDueDate(null)
       setReminderMins(-1)
+      setRecurring(null)
       setShowNote(false)
       setShowPicker(false)
     }
@@ -66,6 +69,7 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
       starred: false,
       dueDate: resolvedDate ? resolvedDate.getTime() : undefined,
       reminderLeadTime: resolvedReminder ?? undefined,
+      recurring: recurring ?? undefined,
       note: note.trim() || undefined,
       createdAt: now,
       updatedAt: now,
@@ -177,11 +181,22 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
           <select
             className="add-task-list-select"
             value={list}
-            onChange={(e) => setList(e.target.value as Exclude<ListId, 'today'>)}
+            onChange={(e) => setList(e.target.value)}
           >
-            <option value="personal">Personal</option>
-            <option value="work">Work</option>
-            <option value="errands">Errands</option>
+            {activeLists.map((id) => (
+              <option key={id} value={id}>{id.charAt(0).toUpperCase() + id.slice(1)}</option>
+            ))}
+          </select>
+
+          <select
+            className="reminder-select"
+            value={recurring ?? 'none'}
+            onChange={(e) => setRecurring(e.target.value === 'none' ? null : e.target.value as 'daily' | 'weekly')}
+            title="Recurring"
+          >
+            <option value="none">Once</option>
+            <option value="daily">↻ Daily</option>
+            <option value="weekly">↻ Weekly</option>
           </select>
 
           <button

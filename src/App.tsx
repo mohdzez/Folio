@@ -7,10 +7,13 @@ import { AddTask } from './components/AddTask'
 import { ListSwitcher } from './components/ListSwitcher'
 import { FilterBar } from './components/FilterBar'
 import { Settings } from './components/Settings'
-import type { ListId, FilterView, AppSettings, Task } from './types'
+import { CalendarView } from './components/CalendarView'
+import type { FilterView, AppSettings, Task } from './types'
+import { BUILTIN_LIST_IDS } from './types'
 import { isOverdue } from './lib/parseDate'
 
 const DEFAULT_SETTINGS: AppSettings = { theme: 'dark', reminderLeadTime: 15 }
+const DEFAULT_ACTIVE_LISTS = [...BUILTIN_LIST_IDS]
 
 function Toast({ message, onDone }: { message: string; onDone: () => void }) {
   useEffect(() => {
@@ -23,17 +26,18 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 export default function App() {
   const { user, loading: authLoading, signInWithGoogle } = useAuth()
 
-  const [list, setList] = useState<ListId>('today')
-  const [filter, setFilter] = useState<FilterView>('all')
-  const [addOpen, setAddOpen] = useState(false)
+  const [list, setList]               = useState<string>('today')
+  const [filter, setFilter]           = useState<FilterView>('all')
+  const [addOpen, setAddOpen]         = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
-  const [toasts, setToasts] = useState<{ id: number; msg: string }[]>([])
+  const [calendarMode, setCalendarMode] = useState(false)
+  const [settings, setSettings]       = useState<AppSettings>(DEFAULT_SETTINGS)
+  const [toasts, setToasts]           = useState<{ id: number; msg: string }[]>([])
 
-  const activeListId: Exclude<ListId, 'today'> =
-    list === 'today' ? 'personal' : list
+  const activeLists = settings.activeLists ?? DEFAULT_ACTIVE_LISTS
+  const activeListId = list === 'today' ? activeLists[0] ?? 'personal' : list
 
-  const { tasks, allTasks, loading, addTask, toggleDone, removeTask, toggleStar } =
+  const { tasks, allTasks, loading, addTask, toggleDone, removeTask, toggleStar, snoozeTask } =
     useTasks(user?.uid ?? null, list, filter)
 
   // Subscribe to settings
@@ -48,7 +52,7 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', settings.theme)
   }, [settings.theme])
 
-  // Check URL for ?action=add shortcut
+  // URL shortcut ?action=add
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('action') === 'add') {
@@ -63,19 +67,18 @@ export default function App() {
   }, [])
 
   const handleToggleDone = useCallback(
-    async (id: string) => {
-      await toggleDone(id)
-      toast('✓ done')
-    },
+    async (id: string) => { await toggleDone(id); toast('✓ done') },
     [toggleDone, toast]
   )
 
   const handleDelete = useCallback(
-    async (id: string) => {
-      await removeTask(id)
-      toast('deleted')
-    },
+    async (id: string) => { await removeTask(id); toast('deleted') },
     [removeTask, toast]
+  )
+
+  const handleSnooze = useCallback(
+    async (id: string) => { await snoozeTask(id); toast('snoozed +1h') },
+    [snoozeTask, toast]
   )
 
   const handleThemeToggle = async () => {
@@ -108,7 +111,6 @@ export default function App() {
           folio<span>.</span>
         </h1>
         <div className="header-actions">
-          {/* Auth chip */}
           <div
             className={`auth-chip${user && !user.isAnonymous ? ' signed-in' : ''}`}
             onClick={() => setSettingsOpen(true)}
@@ -118,7 +120,6 @@ export default function App() {
             <span className="dot" />
             {user && !user.isAnonymous ? 'synced' : 'guest'}
           </div>
-          {/* Settings */}
           <button
             className={`icon-btn${settingsOpen ? ' active' : ''}`}
             onClick={() => setSettingsOpen(true)}
@@ -133,28 +134,49 @@ export default function App() {
       </header>
 
       {/* Overdue banner */}
-      {overdueCount > 0 && filter !== 'overdue' && (
+      {overdueCount > 0 && filter !== 'overdue' && !calendarMode && (
         <div className="overdue-banner" onClick={() => setFilter('overdue')} style={{ cursor: 'pointer' }}>
           {overdueCount} overdue task{overdueCount > 1 ? 's' : ''} → tap to view
         </div>
       )}
 
-      {/* List tabs */}
-      <ListSwitcher active={list} tasks={allTasks} onChange={(l) => { setList(l); setFilter('all') }} />
-
-      {/* Filter bar */}
-      <FilterBar active={filter} tasks={allTasks} onChange={setFilter} />
-
-      {/* Task list */}
-      <TaskList
-        tasks={tasks}
-        filter={filter}
-        loading={loading}
-        showList={list === 'today'}
-        onToggleDone={handleToggleDone}
-        onDelete={handleDelete}
-        onStar={toggleStar}
+      {/* List tabs + calendar toggle */}
+      <ListSwitcher
+        active={list}
+        tasks={allTasks}
+        activeLists={activeLists}
+        onChange={(l) => { setList(l); setFilter('all') }}
+        calendarMode={calendarMode}
+        onCalendarToggle={() => setCalendarMode((m) => !m)}
       />
+
+      {calendarMode ? (
+        /* Calendar view */
+        <CalendarView
+          tasks={allTasks}
+          onToggleDone={handleToggleDone}
+          onDelete={handleDelete}
+          onSnooze={handleSnooze}
+        />
+      ) : (
+        <>
+          {/* Filter bar — swipe on it to change filter */}
+          <FilterBar active={filter} tasks={allTasks} onChange={setFilter} />
+
+          {/* Task list — double-tap empty area opens AddTask */}
+          <TaskList
+            tasks={tasks}
+            filter={filter}
+            loading={loading}
+            showList={list === 'today'}
+            onToggleDone={handleToggleDone}
+            onDelete={handleDelete}
+            onStar={toggleStar}
+            onSnooze={handleSnooze}
+            onDoubleClick={() => setAddOpen(true)}
+          />
+        </>
+      )}
 
       {/* FAB — hidden when panel open */}
       <button
@@ -165,7 +187,7 @@ export default function App() {
         +
       </button>
 
-      {/* Backdrop — closes panel when tapping outside */}
+      {/* Backdrop */}
       {addOpen && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 98 }}
@@ -181,6 +203,7 @@ export default function App() {
         activeList={activeListId}
         uid={user?.uid ?? ''}
         defaultReminderLeadTime={settings.reminderLeadTime ?? 15}
+        activeLists={activeLists}
       />
 
       {/* Settings */}

@@ -10,6 +10,8 @@ interface Props {
   onToggleDone: (id: string) => void
   onDelete: (id: string) => void
   onStar: (id: string) => void
+  onSnooze: (id: string) => void
+  onDoubleClick?: () => void
 }
 
 const EMPTY_LABELS: Record<FilterView, string> = {
@@ -19,7 +21,7 @@ const EMPTY_LABELS: Record<FilterView, string> = {
   overdue: 'good',
 }
 
-export function TaskList({ tasks, filter, loading, showList, onToggleDone, onDelete, onStar }: Props) {
+export function TaskList({ tasks, filter, loading, showList, onToggleDone, onDelete, onStar, onSnooze, onDoubleClick }: Props) {
   if (loading) {
     return (
       <div className="task-list-empty">
@@ -30,14 +32,13 @@ export function TaskList({ tasks, filter, loading, showList, onToggleDone, onDel
 
   if (tasks.length === 0) {
     return (
-      <div className="task-list-empty">
+      <div className="task-list-empty" onDoubleClick={onDoubleClick}>
         <div className="empty-glyph">∅</div>
         <div className="empty-label">all {EMPTY_LABELS[filter]}</div>
       </div>
     )
   }
 
-  // Group: starred first, then overdue, then today, then rest
   const starred = tasks.filter((t) => t.starred && !t.done)
   const overdue = tasks.filter((t) => !t.starred && t.dueDate && isOverdue(t.dueDate) && !t.done)
   const today   = tasks.filter((t) => !t.starred && t.dueDate && isToday(t.dueDate) && !isOverdue(t.dueDate) && !t.done)
@@ -58,6 +59,7 @@ export function TaskList({ tasks, filter, loading, showList, onToggleDone, onDel
             onToggleDone={onToggleDone}
             onDelete={onDelete}
             onStar={onStar}
+            onSnooze={onSnooze}
             index={idx++}
           />
         ))}
@@ -66,7 +68,7 @@ export function TaskList({ tasks, filter, loading, showList, onToggleDone, onDel
   }
 
   return (
-    <div className="task-list-scroll">
+    <div className="task-list-scroll" onDoubleClick={onDoubleClick}>
       {renderGroup(starred.length > 0 ? '★ starred' : null, starred)}
       {renderGroup(overdue.length > 0 ? '⚠ overdue' : null, overdue)}
       {renderGroup(today.length > 0 ? '◎ today' : null, today)}

@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import type { User } from 'firebase/auth'
 import type { AppSettings } from '../types'
+import { BUILTIN_LIST_IDS } from '../types'
 import { saveSettings } from '../lib/firestore'
 import { useNotifications } from '../hooks/useNotifications'
+
+const DEFAULT_ACTIVE_LISTS = [...BUILTIN_LIST_IDS]
 
 interface Props {
   isOpen: boolean
@@ -16,20 +19,35 @@ interface Props {
 export function Settings({ isOpen, onClose, user, settings, onSignInWithGoogle, onThemeToggle }: Props) {
   const { permission, requestPermission } = useNotifications(user?.uid ?? null)
   const [reminderTime, setReminderTime] = useState(settings.reminderLeadTime ?? 15)
+  const [activeLists, setActiveLists]   = useState<string[]>(settings.activeLists ?? DEFAULT_ACTIVE_LISTS)
+  const [newListName, setNewListName]   = useState('')
 
-  // Sync local state when settings load from Firestore
-  useEffect(() => {
-    setReminderTime(settings.reminderLeadTime ?? 15)
-  }, [settings.reminderLeadTime])
+  useEffect(() => { setReminderTime(settings.reminderLeadTime ?? 15) }, [settings.reminderLeadTime])
+  useEffect(() => { setActiveLists(settings.activeLists ?? DEFAULT_ACTIVE_LISTS) }, [settings.activeLists])
 
   const handleReminderChange = async (mins: number) => {
     setReminderTime(mins)
     if (!user) return
-    try {
-      await saveSettings(user.uid, { reminderLeadTime: mins })
-    } catch (e) {
-      console.error('Failed to save reminder setting', e)
-    }
+    try { await saveSettings(user.uid, { reminderLeadTime: mins }) }
+    catch (e) { console.error('Failed to save reminder setting', e) }
+  }
+
+  const saveActiveLists = async (lists: string[]) => {
+    setActiveLists(lists)
+    if (!user) return
+    try { await saveSettings(user.uid, { activeLists: lists }) }
+    catch (e) { console.error('Failed to save lists', e) }
+  }
+
+  const handleRemoveList = (id: string) => {
+    saveActiveLists(activeLists.filter((l) => l !== id))
+  }
+
+  const handleAddList = () => {
+    const name = newListName.trim().toLowerCase().replace(/\s+/g, '-')
+    if (!name || activeLists.includes(name)) return
+    setNewListName('')
+    saveActiveLists([...activeLists, name])
   }
 
   return (
@@ -60,6 +78,38 @@ export function Settings({ isOpen, onClose, user, settings, onSignInWithGoogle, 
               <span style={{ fontSize: 11, color: 'var(--success)' }}>● synced</span>
             </div>
           )}
+        </div>
+
+        {/* Lists */}
+        <div className="settings-section">
+          <div className="settings-label">Lists</div>
+          <div className="settings-lists">
+            {activeLists.map((id) => (
+              <div key={id} className="settings-list-row">
+                <span className="settings-list-name">{id}</span>
+                <button
+                  className="settings-list-remove"
+                  onClick={() => handleRemoveList(id)}
+                  title={`Remove ${id}`}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="settings-list-add">
+            <input
+              className="settings-list-input"
+              placeholder="New list name…"
+              value={newListName}
+              onChange={(e) => setNewListName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddList()}
+              maxLength={24}
+            />
+            <button className="settings-btn" style={{ width: 'auto', padding: '5px 14px' }} onClick={handleAddList}>
+              + Add
+            </button>
+          </div>
         </div>
 
         {/* Appearance */}
@@ -109,7 +159,7 @@ export function Settings({ isOpen, onClose, user, settings, onSignInWithGoogle, 
           <div className="settings-label">About</div>
           <div className="settings-row">
             <span className="settings-row-label">Folio</span>
-            <span style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>v0.1.0</span>
+            <span style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>v0.2.0</span>
           </div>
           <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.6 }}>
             Personal task manager. Offline-first.<br/>No ads. No tracking. No noise.
