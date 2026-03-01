@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useTasks } from './hooks/useTasks'
 import { subscribeSettings, saveSettings } from './lib/firestore'
@@ -33,6 +33,8 @@ export default function App() {
   const [calendarMode, setCalendarMode] = useState(false)
   const [settings, setSettings]       = useState<AppSettings>(DEFAULT_SETTINGS)
   const [toasts, setToasts]           = useState<{ id: number; msg: string }[]>([])
+
+  const lastTapRef = useRef<number>(0)
 
   const activeLists = settings.activeLists ?? DEFAULT_ACTIVE_LISTS
   const activeListId = list === 'today' ? activeLists[0] ?? 'personal' : list
@@ -81,6 +83,21 @@ export default function App() {
     [snoozeTask, toast]
   )
 
+  // Double-tap anywhere on page (except interactive elements) → add task
+  const handleDoubleTap = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    const tag = (e.target as HTMLElement).closest(
+      'button, a, input, textarea, select, [role=button], .task-item, .settings-drawer, .add-task-panel'
+    )
+    if (tag || addOpen || settingsOpen) return
+    const now = Date.now()
+    if (now - lastTapRef.current < 350) {
+      setAddOpen(true)
+      lastTapRef.current = 0
+    } else {
+      lastTapRef.current = now
+    }
+  }, [addOpen, settingsOpen])
+
   const handleThemeToggle = async () => {
     const next = settings.theme === 'dark' ? 'light' : 'dark'
     setSettings((s) => ({ ...s, theme: next }))
@@ -104,7 +121,11 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div
+      className="app-shell"
+      onTouchStart={handleDoubleTap}
+      onDoubleClick={handleDoubleTap}
+    >
       {/* Header */}
       <header className="app-header">
         <h1 className="app-title font-serif">
@@ -178,7 +199,6 @@ export default function App() {
             onDelete={handleDelete}
             onStar={toggleStar}
             onSnooze={handleSnooze}
-            onDoubleClick={() => setAddOpen(true)}
           />
         </>
       )}
