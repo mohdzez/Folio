@@ -121,6 +121,7 @@ export default function App() {
     if (tag || addOpen || settingsOpen) return
     const now = Date.now()
     if (now - lastTapRef.current < 350) {
+      e.preventDefault() // prevent double-tap zoom / text selection
       setAddOpen(true)
       lastTapRef.current = 0
     } else {
