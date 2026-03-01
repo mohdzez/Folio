@@ -41,15 +41,22 @@ export function subscribeTasks(
   )
 }
 
+// Strip undefined values — Firestore throws invalid-argument on undefined fields
+function clean<T extends object>(obj: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined)
+  ) as Partial<T>
+}
+
 export async function createTask(uid: string, task: Omit<Task, 'id'>): Promise<string> {
   const ref = doc(collection(db, 'users', uid, 'tasks'))
-  await setDoc(ref, { ...task, createdAt: Date.now(), updatedAt: Date.now() })
+  await setDoc(ref, clean({ ...task, createdAt: Date.now(), updatedAt: Date.now() }))
   return ref.id
 }
 
 export async function updateTask(uid: string, taskId: string, patch: Partial<Task>): Promise<void> {
   const ref = doc(db, 'users', uid, 'tasks', taskId)
-  await updateDoc(ref, { ...patch, updatedAt: serverTimestamp() })
+  await updateDoc(ref, clean({ ...patch, updatedAt: serverTimestamp() }) as any)
 }
 
 export async function deleteTask(uid: string, taskId: string): Promise<void> {
