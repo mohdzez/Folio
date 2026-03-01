@@ -2,6 +2,7 @@ import { useDrag } from '@use-gesture/react'
 import { useRef, useState } from 'react'
 import type { Task } from '../types'
 import { formatDue, isOverdue, isToday } from '../lib/parseDate'
+import { renderMarkdown } from '../lib/markdown'
 
 interface Props {
   task: Task
@@ -177,9 +178,9 @@ export function TaskItem({ task, showList, onToggleDone, onDelete, onStar, onSno
         </div>
       )}
 
-      {/* Note */}
+      {/* Note — rendered as markdown */}
       {expanded && task.note && (
-        <div className="task-note">{task.note}</div>
+        <div className="task-note md-content">{renderMarkdown(task.note)}</div>
       )}
     </div>
   )

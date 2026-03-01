@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import type { Task } from '../types'
 import { parseTaskInput } from '../lib/parseDate'
 import { DateTimePicker } from './DateTimePicker'
+import { NoteEditor } from './NoteEditor'
 
 interface Props {
   isOpen: boolean
@@ -34,6 +35,7 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
   const [recurring, setRecurring]     = useState<'daily' | 'weekly' | null>(null)
   const [showPicker, setShowPicker]   = useState(false)
   const [showNote, setShowNote]       = useState(false)
+  const [noteEditorOpen, setNoteEditorOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const parsed = parseTaskInput(value)
@@ -81,6 +83,7 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
       setShowReminderPicker(false)
       setRecurring(null)
       setShowNote(false)
+      setNoteEditorOpen(false)
       setShowPicker(false)
     }
   }, [isOpen, activeList])
@@ -136,15 +139,22 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
           spellCheck={false}
         />
 
-        {/* Notes field (expandable) */}
-        {showNote && (
-          <textarea
-            className="add-task-note"
-            placeholder="Add a note…"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            rows={2}
-          />
+        {/* Note button — opens full-screen NoteEditor */}
+        {(showNote || note) && (
+          <button
+            className="note-open-btn"
+            onClick={() => setNoteEditorOpen(true)}
+          >
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+              <path d="M2 3h10M2 6.5h7M2 10h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+            {note ? (
+              <span className="note-preview-snippet">{note.slice(0, 60)}{note.length > 60 ? '…' : ''}</span>
+            ) : (
+              'Write note…'
+            )}
+            <span className="note-open-arrow">↗</span>
+          </button>
         )}
 
         {/* Due date display + picker trigger */}
@@ -285,8 +295,8 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
           </select>
 
           <button
-            className={`datetime-toggle${showNote ? ' active' : ''}`}
-            onClick={() => setShowNote(s => !s)}
+            className={`datetime-toggle${showNote || note ? ' active' : ''}`}
+            onClick={() => { setShowNote(s => !s); if (!showNote && !note) setNoteEditorOpen(true) }}
             title="Add note"
           >
             <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><path d="M2 3h10M2 6.5h7M2 10h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
@@ -313,6 +323,15 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
           onClose={() => setShowPicker(false)}
         />
       )}
+
+      {/* Full-screen note editor */}
+      <NoteEditor
+        isOpen={noteEditorOpen}
+        value={note}
+        onChange={setNote}
+        onClose={() => setNoteEditorOpen(false)}
+        taskTitle={parsed.text || undefined}
+      />
     </>
   )
 }
