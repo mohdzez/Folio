@@ -1,0 +1,113 @@
+import { useState, useEffect } from 'react'
+import type { User } from 'firebase/auth'
+import type { AppSettings } from '../types'
+import { saveSettings } from '../lib/firestore'
+import { useNotifications } from '../hooks/useNotifications'
+
+interface Props {
+  isOpen: boolean
+  onClose: () => void
+  user: User | null
+  settings: AppSettings
+  onSignInWithGoogle: () => void
+  onThemeToggle: () => void
+}
+
+export function Settings({ isOpen, onClose, user, settings, onSignInWithGoogle, onThemeToggle }: Props) {
+  const { permission, requestPermission } = useNotifications(user?.uid ?? null)
+  const [reminderTime, setReminderTime] = useState(settings.reminderLeadTime ?? 15)
+
+  const handleReminderChange = async (mins: number) => {
+    setReminderTime(mins)
+    if (user) await saveSettings(user.uid, { reminderLeadTime: mins })
+  }
+
+  return (
+    <div className={`settings-overlay${isOpen ? ' open' : ''}`} onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="settings-panel">
+        <div className="settings-title">Settings</div>
+
+        {/* Account */}
+        <div className="settings-section">
+          <div className="settings-label">Account</div>
+          {user?.isAnonymous !== false ? (
+            <div>
+              <div className="settings-row">
+                <span className="settings-row-label">Signed in as guest</span>
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <button className="settings-btn" onClick={onSignInWithGoogle}>
+                  Sign in with Google →
+                </button>
+              </div>
+              <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.5 }}>
+                Sign in to sync tasks across your devices
+              </div>
+            </div>
+          ) : (
+            <div className="settings-row">
+              <span className="settings-row-label">{user?.email || 'Google account'}</span>
+              <span style={{ fontSize: 11, color: 'var(--success)' }}>●</span>
+            </div>
+          )}
+        </div>
+
+        {/* Appearance */}
+        <div className="settings-section">
+          <div className="settings-label">Appearance</div>
+          <div className="settings-row">
+            <span className="settings-row-label">Dark mode</span>
+            <button
+              className={`toggle${settings.theme === 'dark' ? ' on' : ''}`}
+              onClick={onThemeToggle}
+              aria-label="Toggle dark mode"
+            />
+          </div>
+        </div>
+
+        {/* Notifications */}
+        <div className="settings-section">
+          <div className="settings-label">Notifications</div>
+          <div className="settings-row">
+            <span className="settings-row-label">Push notifications</span>
+            {permission === 'granted' ? (
+              <span style={{ fontSize: 11, color: 'var(--success)' }}>enabled</span>
+            ) : (
+              <button className="settings-btn" style={{ width: 'auto', padding: '4px 12px' }} onClick={requestPermission}>
+                Enable
+              </button>
+            )}
+          </div>
+          {permission === 'granted' && (
+            <div className="settings-row">
+              <span className="settings-row-label">Remind me</span>
+              <select
+                className="settings-select"
+                value={reminderTime}
+                onChange={(e) => handleReminderChange(Number(e.target.value))}
+              >
+                <option value={5}>5 min before</option>
+                <option value={15}>15 min before</option>
+                <option value={30}>30 min before</option>
+                <option value={60}>1 hour before</option>
+                <option value={1440}>1 day before</option>
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* About */}
+        <div className="settings-section">
+          <div className="settings-label">About</div>
+          <div className="settings-row">
+            <span className="settings-row-label">Folio</span>
+            <span style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>v0.1.0</span>
+          </div>
+          <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.6 }}>
+            Personal task manager. Offline-first.<br/>No ads. No tracking. No noise.
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

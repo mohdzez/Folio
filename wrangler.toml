@@ -1,0 +1,9 @@
+# Cloudflare Pages configuration
+# Deploy the dist/ folder to Cloudflare Pages for free hosting with CDN + SSL
+
+[build]
+command = "npm run build"
+destination = "dist"
+
+[build.environment]
+NODE_VERSION = "22"
