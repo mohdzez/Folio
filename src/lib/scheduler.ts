@@ -1,13 +1,13 @@
 /**
- * Local notification scheduler.
+ * Local + remote notification scheduler.
  *
- * Uses ServiceWorkerRegistration.showNotification() which works even when the
- * browser tab is backgrounded (unlike `new Notification()` which Chrome blocks
- * in background tabs). Falls back to `new Notification()` if SW not available.
+ * - Local path: setTimeout → ServiceWorkerRegistration.showNotification()
+ *   Works when the app tab is open or recently backgrounded.
  *
- * - No backend / FCM required.
- * - Timers are rescheduled whenever tasks change.
- * - `notifiedMap` prevents duplicate alerts for the same (taskId, notifyAt) pair.
+ * - Remote path: POST to Cloudflare Worker which fires FCM at the right time.
+ *   Works even when the app is completely closed.
+ *
+ * Call `setWorkerConfig()` once after the user has a valid FCM token.
  */
 
 interface Timer {
@@ -20,14 +20,54 @@ const timers = new Map<string, Timer>()
 // taskId → last notifyAt timestamp we already fired, prevents duplicates
 const notifiedMap = new Map<string, number>()
 
-async function showNotification(taskId: string, title: string, body: string) {
+// Cloudflare Worker config — set once from App.tsx
+let workerUrl = ''
+let workerApiKey = ''
+let fcmToken = ''
+
+export function setWorkerConfig(url: string, apiKey: string, token: string) {
+  workerUrl = url
+  workerApiKey = apiKey
+  fcmToken = token
+}
+
+// ── Remote (Worker) scheduling ─────────────────────────────────────────────
+
+async function workerSchedule(taskId: string, title: string, notifyAtMs: number) {
+  if (!workerUrl || !workerApiKey || !fcmToken) return
+  try {
+    await fetch(`${workerUrl}/api/schedule`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${workerApiKey}`,
+      },
+      body: JSON.stringify({ taskId, title, notifyAt: notifyAtMs, fcmToken }),
+    })
+  } catch {
+    // Network failure — local fallback still covers the case
+  }
+}
+
+async function workerCancel(taskId: string) {
+  if (!workerUrl || !workerApiKey) return
+  try {
+    await fetch(`${workerUrl}/api/schedule/${encodeURIComponent(taskId)}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${workerApiKey}` },
+    })
+  } catch { /* ignore */ }
+}
+
+// ── Local (setTimeout) scheduling ─────────────────────────────────────────
+
+async function showLocalNotification(taskId: string, title: string, body: string) {
   const icon = `${location.origin}/Folio/pwa-192x192.png`
   const opts: NotificationOptions = {
     body,
     icon,
     badge: icon,
     tag: `folio-${taskId}`,
-    // renotify makes the notification re-ring even if tag already exists
     // @ts-ignore — `renotify` is valid but missing from older TS lib types
     renotify: true,
     data: { url: `${location.origin}/Folio/` },
@@ -38,9 +78,7 @@ async function showNotification(taskId: string, title: string, body: string) {
       const reg = await navigator.serviceWorker.ready
       await reg.showNotification(`⏰ ${title}`, opts)
       return
-    } catch {
-      // SW not controlling page yet — fall through to basic Notification
-    }
+    } catch { /* fall through */ }
   }
 
   if (Notification.permission === 'granted') {
@@ -48,31 +86,35 @@ async function showNotification(taskId: string, title: string, body: string) {
   }
 }
 
+// ── Public API ─────────────────────────────────────────────────────────────
+
 export function scheduleTaskNotification(
   taskId: string,
   taskTitle: string,
   notifyAtMs: number
 ) {
-  // If we already fired a notification for this exact time, skip
   if (notifiedMap.get(taskId) === notifyAtMs) return
 
-  // Cancel any existing timer for this task (e.g. task was edited)
   cancelTaskNotification(taskId)
 
   const delay = notifyAtMs - Date.now()
-
-  // Skip if more than 1 minute in the past (already missed significantly)
-  if (delay < -60_000) return
+  if (delay < -60_000) return // already missed by more than 1 minute
 
   const actualDelay = Math.max(0, delay)
 
+  // Local timeout — fires if tab is still open
   const timeoutId = setTimeout(async () => {
     timers.delete(taskId)
     notifiedMap.set(taskId, notifyAtMs)
-    await showNotification(taskId, taskTitle, 'Task reminder')
+    await showLocalNotification(taskId, taskTitle, 'Task reminder')
+    // Once fired locally, cancel from Worker to avoid duplicate
+    workerCancel(taskId)
   }, actualDelay)
 
   timers.set(taskId, { timeoutId })
+
+  // Remote Worker — fires even if app is closed
+  workerSchedule(taskId, taskTitle, notifyAtMs)
 }
 
 export function cancelTaskNotification(taskId: string) {
@@ -81,6 +123,7 @@ export function cancelTaskNotification(taskId: string) {
     clearTimeout(t.timeoutId)
     timers.delete(taskId)
   }
+  workerCancel(taskId)
 }
 
 /** Call when a task is updated so the next scheduleTaskNotification re-fires */

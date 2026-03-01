@@ -39,6 +39,8 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_FIREBASE_VAPID_KEY: ${{ secrets.VITE_FIREBASE_VAPID_KEY }}
+          VITE_WORKER_URL: ${{ secrets.VITE_WORKER_URL }}
+          VITE_WORKER_API_KEY: ${{ secrets.VITE_WORKER_API_KEY }}
         run: npm run build
 
       - name: Inject Firebase config into messaging SW

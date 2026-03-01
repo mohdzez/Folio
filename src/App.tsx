@@ -15,7 +15,14 @@ import {
   scheduleTaskNotification,
   cancelTaskNotification,
   resetNotifiedStatus,
+  setWorkerConfig,
 } from './lib/scheduler'
+import { getMessagingInstance } from './lib/firebase'
+import { getToken } from 'firebase/messaging'
+
+const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY
+const WORKER_URL = import.meta.env.VITE_WORKER_URL ?? ''
+const WORKER_API_KEY = import.meta.env.VITE_WORKER_API_KEY ?? ''
 
 const DEFAULT_SETTINGS: AppSettings = { theme: 'dark', reminderLeadTime: 15 }
 const DEFAULT_ACTIVE_LISTS = [...BUILTIN_LIST_IDS]
@@ -58,6 +65,33 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', settings.theme)
   }, [settings.theme])
+
+  // ── FCM token + Cloudflare Worker config ──────────────────────────────────
+  // Get FCM token when notification permission is granted, then tell the
+  // scheduler about the Worker so it can schedule server-side reminders.
+  const [fcmToken, setFcmToken] = useState<string>('')
+  useEffect(() => {
+    if (typeof Notification === 'undefined') return
+    if (Notification.permission !== 'granted') return
+
+    getMessagingInstance().then(async (messaging) => {
+      if (!messaging) return
+      try {
+        const swReg = await navigator.serviceWorker.getRegistration(import.meta.env.BASE_URL)
+        const opts = swReg
+          ? { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg }
+          : { vapidKey: VAPID_KEY }
+        const token = await getToken(messaging, opts)
+        setFcmToken(token)
+        setWorkerConfig(WORKER_URL, WORKER_API_KEY, token)
+        if (user?.uid) saveSettings(user.uid, { fcmToken: token })
+      } catch (e) {
+        console.warn('FCM token error', e)
+      }
+    })
+  // Re-run if permission changes (user grants in Settings) or user logs in
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid])
 
   // ── Local notification scheduler ──────────────────────────────────────────
   // No backend needed — schedule directly in the browser.
