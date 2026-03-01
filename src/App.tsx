@@ -39,7 +39,7 @@ export default function App() {
   const activeLists = settings.activeLists ?? DEFAULT_ACTIVE_LISTS
   const activeListId = list === 'today' ? activeLists[0] ?? 'personal' : list
 
-  const { tasks, allTasks, loading, addTask, toggleDone, removeTask, toggleStar, snoozeTask } =
+  const { tasks, allTasks, loading, addTask, toggleDone, removeTask, toggleStar, snoozeTask, patchTask } =
     useTasks(user?.uid ?? null, list, filter)
 
   // Subscribe to settings
@@ -81,6 +81,11 @@ export default function App() {
   const handleSnooze = useCallback(
     async (id: string) => { await snoozeTask(id); toast('snoozed +1h') },
     [snoozeTask, toast]
+  )
+
+  const handlePatchNote = useCallback(
+    async (id: string, note: string) => { await patchTask(id, { note }) },
+    [patchTask]
   )
 
   // Double-tap anywhere on page (except interactive elements) → add task
@@ -199,6 +204,7 @@ export default function App() {
             onDelete={handleDelete}
             onStar={toggleStar}
             onSnooze={handleSnooze}
+            onPatchNote={handlePatchNote}
           />
         </>
       )}

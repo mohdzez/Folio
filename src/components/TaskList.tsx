@@ -11,6 +11,7 @@ interface Props {
   onDelete: (id: string) => void
   onStar: (id: string) => void
   onSnooze: (id: string) => void
+  onPatchNote: (id: string, note: string) => void
   onDoubleClick?: () => void
 }
 
@@ -21,7 +22,7 @@ const EMPTY_LABELS: Record<FilterView, string> = {
   overdue: 'good',
 }
 
-export function TaskList({ tasks, filter, loading, showList, onToggleDone, onDelete, onStar, onSnooze, onDoubleClick }: Props) {
+export function TaskList({ tasks, filter, loading, showList, onToggleDone, onDelete, onStar, onSnooze, onPatchNote, onDoubleClick }: Props) {
   if (loading) {
     return (
       <div className="task-list-empty">
@@ -60,6 +61,7 @@ export function TaskList({ tasks, filter, loading, showList, onToggleDone, onDel
             onDelete={onDelete}
             onStar={onStar}
             onSnooze={onSnooze}
+            onPatchNote={onPatchNote}
             index={idx++}
           />
         ))}

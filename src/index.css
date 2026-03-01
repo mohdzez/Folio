@@ -2157,3 +2157,133 @@ body {
 .task-note .md-p  { font-size: 12px; }
 .task-note .md-bullet,
 .task-note .md-check-item { font-size: 12px; }
+
+/* ─── Block-based Note Editor ────────────────────────────────────────────── */
+.note-toolbar-hint {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+  margin-left: auto;
+  align-self: center;
+  white-space: nowrap;
+}
+.note-tool-btn.active {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ne-block {
+  display: flex;
+  align-items: center;
+  padding: 1px 20px;
+  min-height: 36px;
+  gap: 8px;
+}
+.ne-block.focused { background: color-mix(in srgb, var(--accent) 4%, transparent); }
+
+/* Heading blocks */
+.ne-block-h1 { padding-top: 10px; }
+.ne-block-h2 { padding-top: 6px; }
+.ne-block-h3 { padding-top: 4px; }
+
+/* Bullet glyph */
+.ne-bullet-glyph {
+  color: var(--accent);
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: -2px;
+}
+
+/* Checkbox */
+.ne-checkbox {
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid var(--border-2);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  cursor: pointer;
+  color: transparent;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.ne-checkbox.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+/* Inputs */
+.ne-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.6;
+  caret-color: var(--accent);
+  width: 100%;
+  padding: 0;
+}
+.ne-input::placeholder { color: var(--text-dim); opacity: 0.5; }
+.ne-input-h1 { font-family: var(--font-serif); font-size: 22px; font-weight: 700; color: var(--text); }
+.ne-input-h2 { font-family: var(--font-serif); font-size: 17px; font-weight: 600; color: var(--text); }
+.ne-input-h3 { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+.ne-input-bullet { }
+.ne-input-check { }
+.ne-input-check-done { text-decoration: line-through; color: var(--text-dim); }
+
+/* HR block */
+.ne-hr-wrap { padding: 8px 20px; cursor: pointer; }
+.ne-hr { border: none; border-top: 1px solid var(--border-2); margin: 0; }
+
+/* Task item note controls */
+.task-note-wrap {
+  padding: 2px 16px 10px 50px;
+}
+.task-note-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.task-note-edit-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+.task-note-add-btn {
+  display: block;
+  margin: 2px 16px 10px 50px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px 12px;
+  cursor: pointer;
+  width: calc(100% - 66px);
+  transition: color 0.15s, border-color 0.15s;
+}
+.task-note-add-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Move task-note inside task-note-wrap */
+.task-note-wrap .task-note {
+  padding: 4px 0 0 0;
+}

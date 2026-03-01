@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import type { Task } from '../types'
 import { formatDue, isOverdue, isToday } from '../lib/parseDate'
 import { renderMarkdown } from '../lib/markdown'
+import { NoteEditor } from './NoteEditor'
 
 interface Props {
   task: Task
@@ -11,18 +12,20 @@ interface Props {
   onDelete: (id: string) => void
   onStar: (id: string) => void
   onSnooze?: (id: string) => void
+  onPatchNote?: (id: string, note: string) => void
   index?: number
 }
 
 const SWIPE_THRESHOLD = 80
 const TRAY_WIDTH = 160 // enough for two action buttons
 
-export function TaskItem({ task, showList, onToggleDone, onDelete, onStar, onSnooze, index = 0 }: Props) {
+export function TaskItem({ task, showList, onToggleDone, onDelete, onStar, onSnooze, onPatchNote, index = 0 }: Props) {
   const [x, setX] = useState(0)
   const [removing, setRemoving] = useState<'done' | 'delete' | null>(null)
   const [showTray, setShowTray] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
   const [expanded, setExpanded] = useState(false)
+  const [noteEditorOpen, setNoteEditorOpen] = useState(false)
 
   const taskOverdue = !!(task.dueDate && isOverdue(task.dueDate) && !task.done)
 
@@ -178,10 +181,47 @@ export function TaskItem({ task, showList, onToggleDone, onDelete, onStar, onSno
         </div>
       )}
 
-      {/* Note — rendered as markdown */}
+      {/* Note — rendered as markdown with edit button */}
       {expanded && task.note && (
-        <div className="task-note md-content">{renderMarkdown(task.note)}</div>
+        <div className="task-note-wrap">
+          <div className="task-note md-content">{renderMarkdown(task.note, onPatchNote
+            ? (lineIdx, checked) => {
+                const lines = task.note!.split('\n')
+                lines[lineIdx] = lines[lineIdx].replace(/- \[[ xX]\]/, checked ? '- [x]' : '- [ ]')
+                onPatchNote(task.id, lines.join('\n'))
+              }
+            : undefined
+          )}</div>
+          {onPatchNote && (
+            <button
+              className="task-note-edit-btn"
+              onClick={(e) => { e.stopPropagation(); setNoteEditorOpen(true) }}
+            >
+              <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
+                <path d="M9 2l3 3L4 13H1v-3L9 2z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+              </svg>
+              Edit note
+            </button>
+          )}
+        </div>
       )}
+      {expanded && !task.note && onPatchNote && (
+        <button
+          className="task-note-add-btn"
+          onClick={(e) => { e.stopPropagation(); setNoteEditorOpen(true) }}
+        >
+          + Add note
+        </button>
+      )}
+
+      {/* Full-screen note editor */}
+      <NoteEditor
+        isOpen={noteEditorOpen}
+        value={task.note ?? ''}
+        onChange={(v) => onPatchNote?.(task.id, v)}
+        onClose={() => setNoteEditorOpen(false)}
+        taskTitle={task.text}
+      />
     </div>
   )
 }
