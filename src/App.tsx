@@ -39,7 +39,8 @@ export default function App() {
   const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth()
 
   const [list, setList]               = useState<string>('today')
-  const [filter, setFilter]           = useState<FilterView>('all')
+  // When the default tab is 'today', default filter should also be 'today'
+  const [filter, setFilter]           = useState<FilterView>('today')
   const [addOpen, setAddOpen]         = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [calendarMode, setCalendarMode] = useState(false)

@@ -22,15 +22,22 @@ export function useAuth() {
       setLoading(false)
     })
 
-    // On mount: check for any pending redirect result, then fall back to anonymous
+    // On mount: wait for Firebase Auth to finish loading stored credentials
+    // BEFORE checking currentUser. Without authStateReady(), currentUser is
+    // null during the async IndexedDB load and we'd incorrectly create a new
+    // anonymous session (losing all tasks saved under the real UID).
     const init = async () => {
       try {
+        // Wait for Firebase Auth to restore the persisted session
+        await auth.authStateReady()
+
+        // Check for any pending redirect sign-in result
         const result = await getRedirectResult(auth)
         if (result?.user) return // onAuthStateChanged will fire with the Google user
       } catch (e) {
-        console.error('redirect result error:', e)
+        console.error('Auth init error:', e)
       }
-      // No redirect result — sign in anonymously if not already signed in
+      // Only sign in anonymously if still no user after credentials are loaded
       if (!auth.currentUser) {
         await signInAnonymously(auth).catch(console.error)
       }
