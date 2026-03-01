@@ -15,14 +15,18 @@ export function FilterBar({ active, tasks, onChange }: Props) {
   const overdueCount = tasks.filter((t) => !t.done && t.dueDate && isOverdue(t.dueDate)).length
 
   const bind = useDrag(
-    ({ swipe: [swipeX] }) => {
-      if (swipeX !== 0) {
+    ({ movement: [mx], last, velocity: [vx] }) => {
+      if (!last) return
+      const dist = Math.abs(mx)
+      const fast = Math.abs(vx) > 0.25
+      if (dist > 40 || (dist > 15 && fast)) {
         const idx = FILTERS.indexOf(active)
-        const next = Math.max(0, Math.min(FILTERS.length - 1, idx - swipeX))
+        const dir = mx < 0 ? 1 : -1 // swipe left → next filter, swipe right → prev
+        const next = Math.max(0, Math.min(FILTERS.length - 1, idx + dir))
         if (next !== idx) onChange(FILTERS[next])
       }
     },
-    { axis: 'x', swipe: { distance: 40, velocity: [0.3, 0] } }
+    { axis: 'x', filterTaps: true }
   )
 
   return (

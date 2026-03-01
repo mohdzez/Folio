@@ -24,7 +24,7 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 }
 
 export default function App() {
-  const { user, loading: authLoading, signInWithGoogle } = useAuth()
+  const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth()
 
   const [list, setList]               = useState<string>('today')
   const [filter, setFilter]           = useState<FilterView>('all')
@@ -125,9 +125,14 @@ export default function App() {
             onClick={() => setSettingsOpen(true)}
             aria-label="Settings"
           >
+            {/* Cog / settings icon */}
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.3" />
-              <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.22 3.22l1.41 1.41M11.37 11.37l1.41 1.41M3.22 12.78l1.41-1.41M11.37 4.63l1.41-1.41" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.3"/>
+              <path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.06 1.06M11.54 11.54l1.06 1.06M3.4 12.6l1.06-1.06M11.54 4.46l1.06-1.06" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M6.2 1.9A6.5 6.5 0 0 1 9.8 1.9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+              <path d="M6.2 14.1A6.5 6.5 0 0 0 9.8 14.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+              <path d="M1.9 6.2A6.5 6.5 0 0 0 1.9 9.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+              <path d="M14.1 6.2A6.5 6.5 0 0 1 14.1 9.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
             </svg>
           </button>
         </div>
@@ -145,7 +150,7 @@ export default function App() {
         active={list}
         tasks={allTasks}
         activeLists={activeLists}
-        onChange={(l) => { setList(l); setFilter('all') }}
+        onChange={(l) => { setList(l); setFilter(l === 'today' ? 'today' : 'all') }}
         calendarMode={calendarMode}
         onCalendarToggle={() => setCalendarMode((m) => !m)}
       />
@@ -213,6 +218,7 @@ export default function App() {
         user={user}
         settings={settings}
         onSignInWithGoogle={signInWithGoogle}
+        onSignOut={signOut}
         onThemeToggle={handleThemeToggle}
       />
 

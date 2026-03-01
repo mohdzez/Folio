@@ -27,10 +27,10 @@ export function useTasks(uid: string | null, listId: string, filter: FilterView)
 
   const filteredTasks = tasks.filter((t) => {
     if (t.done) return false
-    if (filter === 'today') return t.dueDate ? isToday(t.dueDate) : false
-    if (filter === 'overdue') return t.dueDate ? isOverdue(t.dueDate) : false
-    if (filter === 'upcoming') return t.dueDate ? isUpcoming(t.dueDate) : false
-    if (listId === 'today') return t.dueDate ? isToday(t.dueDate) : false
+    if (filter === 'today')    return !!(t.dueDate && isToday(t.dueDate))
+    if (filter === 'overdue')  return !!(t.dueDate && isOverdue(t.dueDate))
+    if (filter === 'upcoming') return !!(t.dueDate && isUpcoming(t.dueDate))
+    // 'all' — show everything in the current list subscription
     return true
   })
 

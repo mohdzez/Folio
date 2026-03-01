@@ -13,10 +13,11 @@ interface Props {
   user: User | null
   settings: AppSettings
   onSignInWithGoogle: () => void
+  onSignOut: () => void
   onThemeToggle: () => void
 }
 
-export function Settings({ isOpen, onClose, user, settings, onSignInWithGoogle, onThemeToggle }: Props) {
+export function Settings({ isOpen, onClose, user, settings, onSignInWithGoogle, onSignOut, onThemeToggle }: Props) {
   const { permission, requestPermission } = useNotifications(user?.uid ?? null)
   const [reminderTime, setReminderTime] = useState(settings.reminderLeadTime ?? 15)
   const [activeLists, setActiveLists]   = useState<string[]>(settings.activeLists ?? DEFAULT_ACTIVE_LISTS)
@@ -73,9 +74,20 @@ export function Settings({ isOpen, onClose, user, settings, onSignInWithGoogle, 
               </div>
             </div>
           ) : (
-            <div className="settings-row">
-              <span className="settings-row-label">{user?.email || 'Google account'}</span>
-              <span style={{ fontSize: 11, color: 'var(--success)' }}>● synced</span>
+            <div>
+              <div className="settings-row">
+                <span className="settings-row-label">{user?.email || 'Google account'}</span>
+                <span style={{ fontSize: 11, color: 'var(--success)' }}>● synced</span>
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <button
+                  className="settings-btn"
+                  style={{ color: '#e07070', borderColor: 'rgba(220,80,80,0.3)' }}
+                  onClick={() => { onSignOut(); onClose() }}
+                >
+                  Sign out
+                </button>
+              </div>
             </div>
           )}
         </div>
