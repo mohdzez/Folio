@@ -555,7 +555,7 @@ body {
   background: var(--surface);
   border-top: 1px solid var(--border-2);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  padding: 20px 20px calc(var(--safe-bottom) + 20px);
+  padding: 20px 20px calc(var(--safe-bottom) + 28px);
   z-index: 99;
   transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
   transform: translateY(100%);
@@ -1015,6 +1015,388 @@ body {
   animation-delay: calc(var(--index, 0) * 30ms);
 }
 
+/* ─── DateTimePicker ─────────────────────────────────────────────────────── */
+.dtp-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(6px);
+  z-index: 500;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.15s ease;
+}
+
+.dtp-panel {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 0 0 calc(var(--safe-bottom) + 12px);
+  overflow: hidden;
+  animation: slideUp 0.25s cubic-bezier(0.32,0.72,0,1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+/* Tabs */
+.dtp-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.dtp-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.dtp-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Calendar */
+.dtp-calendar { padding: 12px 16px 8px; }
+
+.dtp-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.dtp-nav-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.dtp-nav-btn:hover { color: var(--text); border-color: var(--border-2); }
+
+.dtp-month-label {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0.04em;
+}
+
+.dtp-dow-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+.dtp-dow {
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 4px 0;
+}
+
+.dtp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dtp-day {
+  aspect-ratio: 1;
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dtp-day:hover:not(.empty) { background: var(--surface-2); color: var(--text); }
+.dtp-day.empty { cursor: default; pointer-events: none; }
+
+.dtp-day.today {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.dtp-day.today::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.dtp-day.today { position: relative; }
+
+.dtp-day.sel {
+  background: var(--accent);
+  color: #000;
+  font-weight: 500;
+}
+
+.dtp-day.sel:hover { background: var(--accent); }
+
+/* Quick buttons */
+.dtp-quick-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.dtp-quick {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border-2);
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.dtp-quick:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+/* Time picker */
+.dtp-time {
+  padding: 16px 20px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.dtp-time-label {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.dtp-time-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.dtp-time-sep {
+  font-size: 22px;
+  color: var(--text-dim);
+  padding-top: 28px;
+  line-height: 1;
+}
+
+.dtp-time-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+.dtp-time-col-label {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.dtp-scroll-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 160px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+
+.dtp-scroll-list::-webkit-scrollbar { display: none; }
+
+.dtp-scroll-item {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  padding: 6px 16px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+  text-align: center;
+  min-width: 56px;
+}
+
+.dtp-scroll-item:hover { background: var(--surface); color: var(--text); }
+.dtp-scroll-item.sel {
+  background: var(--accent);
+  color: #000;
+  font-weight: 500;
+}
+
+.dtp-time-display {
+  font-family: var(--font-mono);
+  font-size: 36px;
+  font-weight: 300;
+  color: var(--text);
+  letter-spacing: 0.04em;
+}
+
+/* Footer */
+.dtp-footer {
+  padding: 12px 16px 4px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dtp-sel-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dtp-footer-btns { display: flex; gap: 8px; align-items: center; }
+
+.dtp-btn-clear {
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 6px 4px;
+  transition: color 0.15s;
+}
+
+.dtp-btn-clear:hover { color: var(--text-muted); }
+
+.dtp-btn-confirm {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--accent);
+  border: none;
+  color: #000;
+  padding: 8px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+
+.dtp-btn-confirm:disabled { opacity: 0.3; cursor: default; }
+
+/* ─── Notes textarea in AddTask ──────────────────────────────────────────── */
+.add-task-note {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 300;
+  padding: 8px 0;
+  outline: none;
+  resize: none;
+  caret-color: var(--accent);
+  line-height: 1.6;
+  transition: border-color 0.2s;
+  margin-top: 6px;
+}
+
+.add-task-note::placeholder { color: var(--text-dim); }
+.add-task-note:focus { border-bottom-color: var(--accent); }
+
+/* ─── Reminder chip in AddTask ───────────────────────────────────────────── */
+.reminder-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.reminder-label {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.reminder-select {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  outline: none;
+  cursor: pointer;
+}
+
+/* Note expand in TaskItem */
+.task-note {
+  padding: 4px 20px 10px 50px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* ─── Desktop/Tablet Layout ──────────────────────────────────────────────── */
 @media (min-width: 600px) {
   .app-shell {
@@ -1035,6 +1417,13 @@ body {
   .add-task-panel.open {
     transform: translateX(-50%) translateY(0);
   }
+
+  .dtp-panel {
+    border-radius: var(--radius-lg);
+    margin-bottom: 40px;
+  }
+
+  .dtp-backdrop { align-items: center; }
 
   body::before {
     content: '';

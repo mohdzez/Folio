@@ -118,6 +118,11 @@ export function TaskItem({ task, showList, onToggleDone, onDelete, onStar, index
           ))}
         </div>
       )}
+
+      {/* Note */}
+      {expanded && task.note && (
+        <div className="task-note">{task.note}</div>
+      )}
     </div>
   )
 }

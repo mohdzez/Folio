@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import type { ListId, Task } from '../types'
 import { parseTaskInput } from '../lib/parseDate'
+import { DateTimePicker } from './DateTimePicker'
 
 interface Props {
   isOpen: boolean
@@ -8,57 +9,50 @@ interface Props {
   onAdd: (task: Omit<Task, 'id'>) => void
   activeList: Exclude<ListId, 'today'>
   uid: string
+  defaultReminderLeadTime: number
 }
 
-const QUICK_DATES = [
-  { label: 'Today', offset: 0 },
-  { label: 'Tomorrow', offset: 1 },
-  { label: 'Weekend', offset: -1 },
-  { label: 'Next week', offset: 7 },
+const REMINDER_OPTIONS = [
+  { label: 'Use default', value: -1 },
+  { label: '5 min', value: 5 },
+  { label: '15 min', value: 15 },
+  { label: '30 min', value: 30 },
+  { label: '1 hour', value: 60 },
+  { label: '1 day', value: 1440 },
 ]
 
-function getQuickDate(offset: number, label: string): Date {
-  const d = new Date()
-  if (label === 'Weekend') {
-    const day = d.getDay()
-    const daysUntilSat = (6 - day + 7) % 7 || 7
-    d.setDate(d.getDate() + daysUntilSat)
-    d.setHours(10, 0, 0, 0)
-    return d
-  }
-  d.setDate(d.getDate() + offset)
-  d.setHours(offset === 0 ? Math.max(d.getHours() + 1, 9) : 9, 0, 0, 0)
-  return d
-}
-
-// Format a Date to the value format required by datetime-local input
-function toDatetimeLocal(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-export function AddTask({ isOpen, onClose, onAdd, activeList, uid }: Props) {
-  const [value, setValue] = useState('')
-  const [list, setList] = useState<Exclude<ListId, 'today'>>(activeList)
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [manualDate, setManualDate] = useState<string>('') // datetime-local string
+export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultReminderLeadTime }: Props) {
+  const [value, setValue]             = useState('')
+  const [note, setNote]               = useState('')
+  const [list, setList]               = useState<Exclude<ListId, 'today'>>(activeList)
+  const [dueDate, setDueDate]         = useState<Date | null>(null)
+  const [reminderMins, setReminderMins] = useState<number>(-1) // -1 = use default
+  const [showPicker, setShowPicker]   = useState(false)
+  const [showNote, setShowNote]       = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const parsed = parseTaskInput(value)
 
-  // Resolved due date: manual picker takes priority over NL parsed
-  const resolvedDate: Date | null = manualDate
-    ? new Date(manualDate)
-    : parsed.dueDate
+  // Resolved due: manual picker takes priority over NL-parsed
+  const resolvedDate = dueDate ?? parsed.dueDate
+
+  // Resolved reminder: NL-parsed takes priority over manual select (unless -1)
+  const resolvedReminder =
+    parsed.reminderLeadTime !== null ? parsed.reminderLeadTime
+    : reminderMins === -1 ? null
+    : reminderMins
 
   useEffect(() => {
     if (isOpen) {
       setList(activeList)
-      setTimeout(() => inputRef.current?.focus(), 100)
+      setTimeout(() => inputRef.current?.focus(), 80)
     } else {
       setValue('')
-      setManualDate('')
-      setShowDatePicker(false)
+      setNote('')
+      setDueDate(null)
+      setReminderMins(-1)
+      setShowNote(false)
+      setShowPicker(false)
     }
   }, [isOpen, activeList])
 
@@ -71,119 +65,154 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid }: Props) {
       done: false,
       starred: false,
       dueDate: resolvedDate ? resolvedDate.getTime() : undefined,
+      reminderLeadTime: resolvedReminder ?? undefined,
+      note: note.trim() || undefined,
       createdAt: now,
       updatedAt: now,
     })
-    setValue('')
-    setManualDate('')
-    setShowDatePicker(false)
     onClose()
   }
 
-  const applyQuickDate = (label: string, offset: number) => {
-    const d = getQuickDate(offset, label)
-    setManualDate(toDatetimeLocal(d))
-    setShowDatePicker(true)
-  }
+  const reminderLabel = parsed.reminderLeadTime !== null
+    ? `${parsed.reminderLeadTime} min (from text)`
+    : reminderMins === -1
+    ? `default (${defaultReminderLeadTime} min)`
+    : null
 
   return (
-    <div className={`add-task-panel${isOpen ? ' open' : ''}`} role="dialog" aria-modal="true">
-      <div className="panel-handle" />
+    <>
+      <div className={`add-task-panel${isOpen ? ' open' : ''}`} role="dialog" aria-modal="true">
+        <div className="panel-handle" />
 
-      <input
-        ref={inputRef}
-        className="add-task-input"
-        placeholder='e.g. "Call dentist Thursday 9am"'
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') handleSubmit()
-          if (e.key === 'Escape') onClose()
-        }}
-        autoComplete="off"
-        autoCorrect="off"
-        spellCheck={false}
-      />
+        {/* Main task input */}
+        <input
+          ref={inputRef}
+          className="add-task-input"
+          placeholder='"Call dentist Thursday 9am, 15 min before"'
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) handleSubmit()
+            if (e.key === 'Escape') onClose()
+          }}
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
+        />
 
-      {/* Parsed date preview */}
-      <div className="add-task-parsed">
-        {resolvedDate ? (
-          <span className="parsed-date">
-            {resolvedDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
-            {' '}
-            {resolvedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        ) : value.length > 2 ? (
-          <span className="parsed-hint">no date detected — pick one below</span>
-        ) : (
-          <span className="parsed-hint">type naturally — dates auto-detected</span>
+        {/* Notes field (expandable) */}
+        {showNote && (
+          <textarea
+            className="add-task-note"
+            placeholder="Add a note…"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={2}
+          />
         )}
-      </div>
 
-      {/* Quick date chips */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 12 }}>
-        {QUICK_DATES.map(({ label, offset }) => (
-          <button
-            key={label}
-            className={`list-tab${manualDate && resolvedDate ? '' : ''}`}
-            style={{ fontSize: 10 }}
-            onClick={() => applyQuickDate(label, offset)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+        {/* Due date display + picker trigger */}
+        <div className="add-task-parsed" style={{ marginTop: 10 }}>
+          {resolvedDate ? (
+            <button
+              className="parsed-date"
+              style={{ cursor: 'pointer', border: 'none', background: 'none', padding: 0 }}
+              onClick={() => setShowPicker(true)}
+            >
+              {resolvedDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
+              {' '}
+              {resolvedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              <span style={{ marginLeft: 4, opacity: 0.6, fontSize: 9 }}>▾</span>
+            </button>
+          ) : (
+            <button
+              className="datetime-toggle"
+              onClick={() => setShowPicker(true)}
+            >
+              <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><rect x="1" y="2.5" width="12" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><path d="M4 1v3M10 1v3M1 6h12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+              {parsed.dueDate ? 'Parsed: override date' : 'Set date & time'}
+            </button>
+          )}
+          {resolvedDate && (
+            <button
+              className="datetime-clear"
+              style={{ marginLeft: 6 }}
+              onClick={() => { setDueDate(null) }}
+              title="Clear date"
+            >
+              ✕
+            </button>
+          )}
+        </div>
 
-      {/* Manual datetime picker */}
-      <div className="add-task-datetime">
-        <button
-          className={`datetime-toggle${showDatePicker ? ' active' : ''}`}
-          onClick={() => setShowDatePicker((s) => !s)}
-        >
-          <span>{showDatePicker ? '▾' : '▸'}</span>
-          Pick date & time manually
-        </button>
-        {showDatePicker && (
-          <div className="datetime-input-row">
-            <input
-              type="datetime-local"
-              className="datetime-native"
-              value={manualDate}
-              onChange={(e) => setManualDate(e.target.value)}
-            />
-            {manualDate && (
-              <button className="datetime-clear" onClick={() => setManualDate('')} title="Clear date">
-                ✕
-              </button>
+        {/* Reminder row — only visible when there's a due date */}
+        {resolvedDate && (
+          <div className="reminder-row">
+            <span className="reminder-label">Remind</span>
+            {parsed.reminderLeadTime !== null ? (
+              <span style={{ fontSize: 11, color: 'var(--accent)' }}>
+                {parsed.reminderLeadTime} min before (from text)
+              </span>
+            ) : (
+              <select
+                className="reminder-select"
+                value={reminderMins}
+                onChange={(e) => setReminderMins(Number(e.target.value))}
+              >
+                {REMINDER_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>
+                    {o.value === -1 ? `default (${defaultReminderLeadTime} min)` : o.label}
+                  </option>
+                ))}
+              </select>
             )}
           </div>
         )}
+
+        {/* Spacer */}
+        <div style={{ height: 14 }} />
+
+        {/* Actions row */}
+        <div className="add-task-actions">
+          <select
+            className="add-task-list-select"
+            value={list}
+            onChange={(e) => setList(e.target.value as Exclude<ListId, 'today'>)}
+          >
+            <option value="personal">Personal</option>
+            <option value="work">Work</option>
+            <option value="errands">Errands</option>
+          </select>
+
+          <button
+            className={`datetime-toggle${showNote ? ' active' : ''}`}
+            onClick={() => setShowNote(s => !s)}
+            title="Add note"
+          >
+            <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><path d="M2 3h10M2 6.5h7M2 10h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+            Note
+          </button>
+
+          <button className="add-task-cancel" onClick={onClose}>Cancel</button>
+
+          <button
+            className="add-task-submit"
+            onClick={handleSubmit}
+            disabled={!value.trim()}
+          >
+            Add
+          </button>
+        </div>
       </div>
 
-      {/* Actions row */}
-      <div className="add-task-actions">
-        <select
-          className="add-task-list-select"
-          value={list}
-          onChange={(e) => setList(e.target.value as Exclude<ListId, 'today'>)}
-        >
-          <option value="personal">Personal</option>
-          <option value="work">Work</option>
-          <option value="errands">Errands</option>
-        </select>
-
-        <button className="add-task-cancel" onClick={onClose}>
-          Cancel
-        </button>
-
-        <button
-          className="add-task-submit"
-          onClick={handleSubmit}
-          disabled={!value.trim()}
-        >
-          Add
-        </button>
-      </div>
-    </div>
+      {/* Custom themed date/time picker */}
+      {showPicker && (
+        <DateTimePicker
+          value={resolvedDate}
+          onChange={(d) => { setDueDate(d); setShowPicker(false) }}
+          onClose={() => setShowPicker(false)}
+        />
+      )}
+    </>
   )
 }

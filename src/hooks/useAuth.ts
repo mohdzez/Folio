@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import {
   signInAnonymously,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
   User,
@@ -20,8 +21,12 @@ export function useAuth() {
     return unsub
   }, [])
 
+  // Handle redirect result on app load
   useEffect(() => {
-    // Auto sign in anonymously if no user
+    getRedirectResult(auth).catch(console.error)
+  }, [])
+
+  useEffect(() => {
     if (!loading && !user) {
       signInAnonymously(auth).catch(console.error)
     }
@@ -29,7 +34,7 @@ export function useAuth() {
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider()
-    await signInWithPopup(auth, provider)
+    await signInWithRedirect(auth, provider)
   }
 
   return { user, loading, signInWithGoogle }

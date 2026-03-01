@@ -180,6 +180,7 @@ export default function App() {
         onAdd={handleAddTask}
         activeList={activeListId}
         uid={user?.uid ?? ''}
+        defaultReminderLeadTime={settings.reminderLeadTime ?? 15}
       />
 
       {/* Settings */}

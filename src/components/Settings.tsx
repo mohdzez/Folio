@@ -17,9 +17,19 @@ export function Settings({ isOpen, onClose, user, settings, onSignInWithGoogle, 
   const { permission, requestPermission } = useNotifications(user?.uid ?? null)
   const [reminderTime, setReminderTime] = useState(settings.reminderLeadTime ?? 15)
 
+  // Sync local state when settings load from Firestore
+  useEffect(() => {
+    setReminderTime(settings.reminderLeadTime ?? 15)
+  }, [settings.reminderLeadTime])
+
   const handleReminderChange = async (mins: number) => {
     setReminderTime(mins)
-    if (user) await saveSettings(user.uid, { reminderLeadTime: mins })
+    if (!user) return
+    try {
+      await saveSettings(user.uid, { reminderLeadTime: mins })
+    } catch (e) {
+      console.error('Failed to save reminder setting', e)
+    }
   }
 
   return (
@@ -41,13 +51,13 @@ export function Settings({ isOpen, onClose, user, settings, onSignInWithGoogle, 
                 </button>
               </div>
               <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.5 }}>
-                Sign in to sync tasks across your devices
+                Redirects to Google — tasks sync across devices
               </div>
             </div>
           ) : (
             <div className="settings-row">
               <span className="settings-row-label">{user?.email || 'Google account'}</span>
-              <span style={{ fontSize: 11, color: 'var(--success)' }}>●</span>
+              <span style={{ fontSize: 11, color: 'var(--success)' }}>● synced</span>
             </div>
           )}
         </div>
@@ -78,22 +88,20 @@ export function Settings({ isOpen, onClose, user, settings, onSignInWithGoogle, 
               </button>
             )}
           </div>
-          {permission === 'granted' && (
-            <div className="settings-row">
-              <span className="settings-row-label">Remind me</span>
-              <select
-                className="settings-select"
-                value={reminderTime}
-                onChange={(e) => handleReminderChange(Number(e.target.value))}
-              >
-                <option value={5}>5 min before</option>
-                <option value={15}>15 min before</option>
-                <option value={30}>30 min before</option>
-                <option value={60}>1 hour before</option>
-                <option value={1440}>1 day before</option>
-              </select>
-            </div>
-          )}
+          <div className="settings-row">
+            <span className="settings-row-label">Default remind me</span>
+            <select
+              className="settings-select"
+              value={reminderTime}
+              onChange={(e) => handleReminderChange(Number(e.target.value))}
+            >
+              <option value={5}>5 min before</option>
+              <option value={15}>15 min before</option>
+              <option value={30}>30 min before</option>
+              <option value={60}>1 hour before</option>
+              <option value={1440}>1 day before</option>
+            </select>
+          </div>
         </div>
 
         {/* About */}
