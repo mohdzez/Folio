@@ -3,7 +3,6 @@ import type { User } from 'firebase/auth'
 import type { AppSettings } from '../types'
 import { BUILTIN_LIST_IDS } from '../types'
 import { saveSettings } from '../lib/firestore'
-import { useNotifications } from '../hooks/useNotifications'
 
 const DEFAULT_ACTIVE_LISTS = [...BUILTIN_LIST_IDS]
 
@@ -18,7 +17,14 @@ interface Props {
 }
 
 export function Settings({ isOpen, onClose, user, settings, onSignInWithGoogle, onSignOut, onThemeToggle }: Props) {
-  const { permission, requestPermission } = useNotifications(user?.uid ?? null)
+  const [permission, setPermission] = useState<NotificationPermission>(
+    typeof Notification !== 'undefined' ? Notification.permission : 'default'
+  )
+  const requestPermission = async () => {
+    if (typeof Notification === 'undefined') return
+    const result = await Notification.requestPermission()
+    setPermission(result)
+  }
   const [reminderTime, setReminderTime] = useState(settings.reminderLeadTime ?? 15)
   const [activeLists, setActiveLists]   = useState<string[]>(settings.activeLists ?? DEFAULT_ACTIVE_LISTS)
   const [newListName, setNewListName]   = useState('')

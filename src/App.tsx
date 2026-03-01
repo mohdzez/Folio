@@ -11,6 +11,11 @@ import { CalendarView } from './components/CalendarView'
 import type { FilterView, AppSettings, Task } from './types'
 import { BUILTIN_LIST_IDS } from './types'
 import { isOverdue } from './lib/parseDate'
+import {
+  scheduleTaskNotification,
+  cancelTaskNotification,
+  resetNotifiedStatus,
+} from './lib/scheduler'
 
 const DEFAULT_SETTINGS: AppSettings = { theme: 'dark', reminderLeadTime: 15 }
 const DEFAULT_ACTIVE_LISTS = [...BUILTIN_LIST_IDS]
@@ -54,6 +59,67 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', settings.theme)
   }, [settings.theme])
 
+  // ── Local notification scheduler ──────────────────────────────────────────
+  // No backend needed — schedule directly in the browser.
+  // ServiceWorkerRegistration.showNotification() works even when the tab is
+  // backgrounded (unlike `new Notification()`).
+  useEffect(() => {
+    if (typeof Notification === 'undefined') return
+
+    // Auto-request permission the first time there are tasks with reminders
+    const needsPermission = allTasks.some(
+      (t) => !t.done && (t.reminderAt || t.dueDate)
+    )
+    if (needsPermission && Notification.permission === 'default') {
+      Notification.requestPermission()
+      return
+    }
+
+    if (Notification.permission !== 'granted') return
+
+    const leadMs = (settings.reminderLeadTime ?? 15) * 60_000
+
+    for (const task of allTasks) {
+      if (task.done) {
+        cancelTaskNotification(task.id)
+        continue
+      }
+
+      // Determine notification timestamp
+      let notifyAt: number | undefined
+      if (task.reminderAt) {
+        notifyAt = task.reminderAt
+      } else if (task.dueDate != null && task.reminderLeadTime != null) {
+        notifyAt = task.dueDate - task.reminderLeadTime * 60_000
+      } else if (task.dueDate != null) {
+        notifyAt = task.dueDate - leadMs
+      }
+
+      if (notifyAt != null) {
+        scheduleTaskNotification(task.id, task.text, notifyAt)
+      }
+    }
+  }, [allTasks, settings.reminderLeadTime])
+
+  // Re-check for missed notifications when app comes back to foreground
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        const leadMs = (settings.reminderLeadTime ?? 15) * 60_000
+        for (const task of allTasks) {
+          if (task.done) continue
+          let notifyAt: number | undefined
+          if (task.reminderAt) notifyAt = task.reminderAt
+          else if (task.dueDate != null && task.reminderLeadTime != null) notifyAt = task.dueDate - task.reminderLeadTime * 60_000
+          else if (task.dueDate != null) notifyAt = task.dueDate - leadMs
+          if (notifyAt != null) scheduleTaskNotification(task.id, task.text, notifyAt)
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [allTasks, settings.reminderLeadTime])
+
   // Global visual viewport tracker — sets --keyboard-height CSS variable
   // baseHeight is captured at mount (no keyboard yet) as the stable reference.
   // iOS: window.innerHeight shrinks with keyboard, but we only care about vv.height
@@ -94,17 +160,17 @@ export default function App() {
   }, [])
 
   const handleToggleDone = useCallback(
-    async (id: string) => { await toggleDone(id); toast('✓ done') },
+    async (id: string) => { await toggleDone(id); cancelTaskNotification(id); toast('✓ done') },
     [toggleDone, toast]
   )
 
   const handleDelete = useCallback(
-    async (id: string) => { await removeTask(id); toast('deleted') },
+    async (id: string) => { await removeTask(id); cancelTaskNotification(id); toast('deleted') },
     [removeTask, toast]
   )
 
   const handleSnooze = useCallback(
-    async (id: string) => { await snoozeTask(id); toast('snoozed +1h') },
+    async (id: string) => { await snoozeTask(id); resetNotifiedStatus(id); toast('snoozed +1h') },
     [snoozeTask, toast]
   )
 
