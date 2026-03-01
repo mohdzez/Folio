@@ -27,10 +27,17 @@ export function subscribeTasks(
       ? query(ref, where('listId', '==', listId), orderBy('createdAt', 'desc'))
       : query(ref, orderBy('createdAt', 'desc'))
 
-  return onSnapshot(q, (snap) => {
-    const tasks = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Task))
-    callback(tasks)
-  })
+  return onSnapshot(
+    q,
+    (snap) => {
+      const tasks = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Task))
+      callback(tasks)
+    },
+    (error) => {
+      console.error('Firestore tasks subscription error:', error)
+      // Don't wipe existing tasks on error — just log it
+    }
+  )
 }
 
 export async function createTask(uid: string, task: Omit<Task, 'id'>): Promise<string> {

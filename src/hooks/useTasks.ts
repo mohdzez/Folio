@@ -15,14 +15,16 @@ export function useTasks(uid: string | null, listId: string, filter: FilterView)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!uid) return
+    if (!uid) { setLoading(false); return }
     setLoading(true)
     const unsub = subscribeTasks(
       uid,
       listId === 'today' ? null : listId,
       (t) => { setTasks(t); setLoading(false) }
     )
-    return unsub
+    // Fallback: if Firestore never responds (offline, error), stop loading after 5s
+    const timeout = setTimeout(() => setLoading(false), 5000)
+    return () => { unsub(); clearTimeout(timeout) }
   }, [uid, listId])
 
   const filteredTasks = tasks.filter((t) => {
@@ -42,7 +44,8 @@ export function useTasks(uid: string | null, listId: string, filter: FilterView)
       try {
         const id = await createTask(uid, task)
         setTasks((prev) => prev.map((t) => (t.id === tempId ? { ...t, id } : t)))
-      } catch {
+      } catch (e) {
+        console.error('Failed to save task to Firestore:', e)
         const queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]')
         queue.push(task)
         localStorage.setItem(QUEUE_KEY, JSON.stringify(queue))
