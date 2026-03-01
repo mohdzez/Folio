@@ -53,9 +53,9 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
   useEffect(() => {
     if (isOpen) {
       setList(activeList)
-      // Delay focus until after panel slide-in animation completes (300ms)
-      // so keyboard opens when panel is already in final position
-      setTimeout(() => inputRef.current?.focus(), 320)
+      // Focus after panel animation starts (100ms) — bottom is already keyboard-aware
+      // so the keyboard will open at the correct position
+      setTimeout(() => inputRef.current?.focus(), 100)
     } else {
       setValue('')
       setNote('')

@@ -55,17 +55,18 @@ export default function App() {
   }, [settings.theme])
 
   // Global visual viewport tracker — sets --keyboard-height CSS variable
-  // Works on both iOS (where window.innerHeight shrinks) and Android (where it doesn't)
+  // baseHeight is captured at mount (no keyboard yet) as the stable reference.
+  // iOS: window.innerHeight shrinks with keyboard, but we only care about vv.height
+  // Android: window.innerHeight stays fixed
+  // Both: vv.height is the visible area above the keyboard. baseHeight - vv.height = keyboard height.
   useEffect(() => {
     const root = document.documentElement
     const vv = window.visualViewport
+    // snapshot before any keyboard opens; use screen.availHeight as most stable value
+    const baseHeight = vv?.height ?? window.innerHeight
     const update = () => {
       if (!vv) return
-      // document.documentElement.clientHeight is stable and excludes browser chrome
-      const docH  = root.clientHeight
-      // visible area top + visible height = how much is actually on screen
-      const visibleBottom = vv.offsetTop + vv.height
-      const kbHeight = Math.max(0, docH - visibleBottom)
+      const kbHeight = Math.max(0, baseHeight - vv.height)
       root.style.setProperty('--keyboard-height', `${kbHeight}px`)
       root.style.setProperty('--vvh', `${vv.height}px`)
     }
