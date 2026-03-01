@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 interface Props {
   value: Date | null
@@ -83,7 +84,7 @@ export function DateTimePicker({ value, onChange, onClose }: Props) {
     ? `${MONTHS[viewMonth]} ${selDay}, ${viewYear}  ${pad(hour)}:${pad(minute)}`
     : 'No date'
 
-  return (
+  return createPortal(
     <div className="dtp-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="dtp-panel" ref={ref}>
 
@@ -191,6 +192,7 @@ export function DateTimePicker({ value, onChange, onClose }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
