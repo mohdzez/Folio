@@ -44,6 +44,25 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
     : reminderMins === -1 ? null
     : reminderMins
 
+  const [keyboardOffset, setKeyboardOffset] = useState(0)
+
+  // Track visual viewport to keep panel above keyboard
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const update = () => {
+      const offset = window.innerHeight - vv.height - vv.offsetTop
+      setKeyboardOffset(Math.max(0, offset))
+    }
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    update()
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+    }
+  }, [])
+
   useEffect(() => {
     if (isOpen) {
       setList(activeList)
@@ -85,7 +104,12 @@ export function AddTask({ isOpen, onClose, onAdd, activeList, uid, defaultRemind
 
   return (
     <>
-      <div className={`add-task-panel${isOpen ? ' open' : ''}`} role="dialog" aria-modal="true">
+      <div
+        className={`add-task-panel${isOpen ? ' open' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        style={{ bottom: keyboardOffset, maxHeight: `calc(${window.visualViewport?.height ?? window.innerHeight}px - 60px)` }}
+      >
         <div className="panel-handle" />
 
         {/* Main task input */}

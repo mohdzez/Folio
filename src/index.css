@@ -585,8 +585,10 @@ body {
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   padding: 20px 20px calc(var(--safe-bottom) + 28px);
   z-index: 99;
-  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), bottom 0.15s ease;
   transform: translateY(100%);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .add-task-panel.open {
