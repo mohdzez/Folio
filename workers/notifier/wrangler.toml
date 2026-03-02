@@ -7,7 +7,8 @@ compatibility_date = "2024-09-23"
 binding = "FOLIO_KV"
 id = "1531a78cc2fe450a92dfc7ebc9958ab9"
 
-# Cron: runs every 5 minutes — 288/day vs 1440/day at every-minute
-# Task reminders only need ~5min precision; this saves 80% of Worker invocations
+# Cron: runs every minute — 1,440 invocations/day.
+# KV usage is safe: only 1 list read/tick (1,440 reads/day = 1.4% of 100k free limit).
+# OAuth token is cached in KV so only 24 writes/day regardless of cron frequency.
 [triggers]
-crons = ["*/5 * * * *"]
+crons = ["*/1 * * * *"]
