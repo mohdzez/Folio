@@ -17,8 +17,12 @@ interface Timer {
 // Active timers keyed by taskId
 const timers = new Map<string, Timer>()
 
-// taskId → last notifyAt timestamp we already fired, prevents duplicates
+// taskId → last notifyAt timestamp we already fired locally, prevents duplicates
 const notifiedMap = new Map<string, number>()
+
+// taskId → notifyAt we've already sent to the Worker
+// Prevents a KV write on every Firestore snapshot update (called on every allTasks change)
+const workerRegistered = new Map<string, number>()
 
 // Cloudflare Worker config — set once from App.tsx
 let workerUrl = ''
@@ -35,6 +39,8 @@ export function setWorkerConfig(url: string, apiKey: string, token: string) {
 
 async function workerSchedule(taskId: string, title: string, notifyAtMs: number) {
   if (!workerUrl || !workerApiKey || !fcmToken) return
+  // Skip KV write if we've already registered this exact notifyAt for this task
+  if (workerRegistered.get(taskId) === notifyAtMs) return
   try {
     await fetch(`${workerUrl}/api/schedule`, {
       method: 'POST',
@@ -44,6 +50,7 @@ async function workerSchedule(taskId: string, title: string, notifyAtMs: number)
       },
       body: JSON.stringify({ taskId, title, notifyAt: notifyAtMs, fcmToken }),
     })
+    workerRegistered.set(taskId, notifyAtMs)
   } catch {
     // Network failure — local fallback still covers the case
   }
@@ -51,6 +58,7 @@ async function workerSchedule(taskId: string, title: string, notifyAtMs: number)
 
 async function workerCancel(taskId: string) {
   if (!workerUrl || !workerApiKey) return
+  workerRegistered.delete(taskId)
   try {
     await fetch(`${workerUrl}/api/schedule/${encodeURIComponent(taskId)}`, {
       method: 'DELETE',

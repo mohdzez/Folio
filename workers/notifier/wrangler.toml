@@ -7,13 +7,7 @@ compatibility_date = "2024-09-23"
 binding = "FOLIO_KV"
 id = "1531a78cc2fe450a92dfc7ebc9958ab9"
 
-# Cron: runs every minute to fire due notifications
+# Cron: runs every 5 minutes — 288/day vs 1440/day at every-minute
+# Task reminders only need ~5min precision; this saves 80% of Worker invocations
 [triggers]
-crons = ["*/1 * * * *"]
-
-# Secrets (set once via `wrangler secret put`):
-#   FCM_SERVER_KEY  — Firebase Cloud Messaging server key
-#                     Firebase Console → Project Settings → Cloud Messaging →
-#                     Cloud Messaging API (Legacy) → Server key
-#   API_KEY         — random secret shared with the PWA; generate with:
-#                     openssl rand -hex 32
+crons = ["*/5 * * * *"]

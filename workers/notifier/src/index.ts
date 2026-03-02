@@ -38,7 +38,6 @@ function corsHeaders(origin: string) {
   }
 }
 
-// base64url encode string or binary data
 function b64u(data: ArrayBuffer | Uint8Array | string): string {
   let bytes: Uint8Array
   if (typeof data === 'string') bytes = new TextEncoder().encode(data)
@@ -57,13 +56,19 @@ function pemToBuffer(pem: string): ArrayBuffer {
   return buf.buffer
 }
 
-let cachedToken = ''
-let tokenExpiresAt = 0
+// Cache the OAuth2 token in KV so it survives across stateless Worker invocations.
+// Without KV caching, each cron tick re-signs a JWT and calls Google OAuth2 (wasteful).
+// With KV caching: 1 token write per hour (24 KV writes/day) vs 288 OAuth2 calls/day.
+const TOKEN_KV_KEY = '_oauth_token'
 
 async function getAccessToken(env: Env): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
-  if (cachedToken && now < tokenExpiresAt - 60) return cachedToken
 
+  // Try KV cache first (1 KV read per cron tick — cheap)
+  const cached = await env.FOLIO_KV.get(TOKEN_KV_KEY, 'json') as { token: string; exp: number } | null
+  if (cached && now < cached.exp - 60) return cached.token
+
+  // Cache miss — sign a new JWT and exchange for OAuth2 access token
   const header = b64u(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
   const claims = b64u(JSON.stringify({
     iss: env.FIREBASE_CLIENT_EMAIL,
@@ -89,8 +94,12 @@ async function getAccessToken(env: Env): Promise<string> {
   if (!resp.ok) throw new Error(`OAuth2 error: ${await resp.text()}`)
 
   const { access_token, expires_in } = await resp.json() as { access_token: string; expires_in: number }
-  cachedToken = access_token
-  tokenExpiresAt = now + expires_in
+
+  // Store in KV with TTL slightly under the token's lifetime
+  await env.FOLIO_KV.put(TOKEN_KV_KEY, JSON.stringify({ token: access_token, exp: now + expires_in }), {
+    expirationTtl: expires_in - 60,
+  })
+
   return access_token
 }
 
