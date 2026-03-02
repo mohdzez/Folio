@@ -20,9 +20,28 @@ const timers = new Map<string, Timer>()
 // taskId → last notifyAt timestamp we already fired locally, prevents duplicates
 const notifiedMap = new Map<string, number>()
 
-// taskId → notifyAt we've already sent to the Worker
-// Prevents a KV write on every Firestore snapshot update (called on every allTasks change)
-const workerRegistered = new Map<string, number>()
+// taskId → notifyAt we've already sent to the Worker, persisted to localStorage.
+// A plain Map resets on every page load, causing 1 KV write per task per app open.
+// localStorage survives reloads, so re-registrations only happen when notifyAt changes.
+const LS_KEY = 'folio_worker_reg'
+
+function loadWorkerRegistered(): Map<string, number> {
+  try {
+    const raw = localStorage.getItem(LS_KEY)
+    if (!raw) return new Map()
+    return new Map(JSON.parse(raw) as [string, number][])
+  } catch {
+    return new Map()
+  }
+}
+
+function saveWorkerRegistered(map: Map<string, number>) {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify([...map.entries()]))
+  } catch { /* quota exceeded — non-fatal */ }
+}
+
+const workerRegistered = loadWorkerRegistered()
 
 // Cloudflare Worker config — set once from App.tsx
 let workerUrl = ''
@@ -37,9 +56,13 @@ export function setWorkerConfig(url: string, apiKey: string, token: string) {
 
 // ── Remote (Worker) scheduling ─────────────────────────────────────────────
 
+const MAX_WORKER_LOOKAHEAD_MS = 24 * 60 * 60 * 1000 // only register tasks due within 24h
+
 async function workerSchedule(taskId: string, title: string, notifyAtMs: number) {
   if (!workerUrl || !workerApiKey || !fcmToken) return
-  // Skip KV write if we've already registered this exact notifyAt for this task
+  // Don't register tasks due more than 24h away — re-register on next app open
+  if (notifyAtMs - Date.now() > MAX_WORKER_LOOKAHEAD_MS) return
+  // Skip KV write if we've already registered this exact notifyAt (survives page reloads)
   if (workerRegistered.get(taskId) === notifyAtMs) return
   try {
     await fetch(`${workerUrl}/api/schedule`, {
@@ -51,6 +74,7 @@ async function workerSchedule(taskId: string, title: string, notifyAtMs: number)
       body: JSON.stringify({ taskId, title, notifyAt: notifyAtMs, fcmToken }),
     })
     workerRegistered.set(taskId, notifyAtMs)
+    saveWorkerRegistered(workerRegistered)
   } catch {
     // Network failure — local fallback still covers the case
   }
@@ -59,6 +83,7 @@ async function workerSchedule(taskId: string, title: string, notifyAtMs: number)
 async function workerCancel(taskId: string) {
   if (!workerUrl || !workerApiKey) return
   workerRegistered.delete(taskId)
+  saveWorkerRegistered(workerRegistered)
   try {
     await fetch(`${workerUrl}/api/schedule/${encodeURIComponent(taskId)}`, {
       method: 'DELETE',
