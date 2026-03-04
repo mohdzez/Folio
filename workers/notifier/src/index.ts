@@ -57,14 +57,15 @@ function pemToBuffer(pem: string): ArrayBuffer {
 }
 
 // Cache the OAuth2 token in KV so it survives across stateless Worker invocations.
-// Without KV caching, each cron tick re-signs a JWT and calls Google OAuth2 (wasteful).
-// With KV caching: 1 token write per hour (24 KV writes/day) vs 288 OAuth2 calls/day.
+// NOTE: KV has eventual consistency (~60s propagation). The token read is placed
+// AFTER the task list check so we never touch the token unless there are due tasks.
+// When the app is unused (empty KV), the cron only does 1 list read/tick and returns.
 const TOKEN_KV_KEY = '_oauth_token'
 
 async function getAccessToken(env: Env): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
 
-  // Try KV cache first (1 KV read per cron tick — cheap)
+  // Try KV cache — may miss due to eventual consistency, that's acceptable
   const cached = await env.FOLIO_KV.get(TOKEN_KV_KEY, 'json') as { token: string; exp: number } | null
   if (cached && now < cached.exp - 60) return cached.token
 
@@ -95,7 +96,8 @@ async function getAccessToken(env: Env): Promise<string> {
 
   const { access_token, expires_in } = await resp.json() as { access_token: string; expires_in: number }
 
-  // Store in KV with TTL slightly under the token's lifetime
+  // Best-effort cache: write may not be visible to next invocation (KV eventual consistency)
+  // but that's fine — we only reach here when there are due tasks, so extra writes are rare
   await env.FOLIO_KV.put(TOKEN_KV_KEY, JSON.stringify({ token: access_token, exp: now + expires_in }), {
     expirationTtl: expires_in - 60,
   })
@@ -141,15 +143,33 @@ async function sendFCM(env: Env, fcmToken: string, title: string, body: string):
 
 async function firedue(env: Env): Promise<void> {
   const now = Date.now()
+
+  // 1 KV list read — the ONLY operation when no tasks are scheduled.
+  // If this returns empty (app unused), we return immediately with zero
+  // token reads or writes. This is the fix for the KV write limit exhaustion:
+  // the OAuth token was being read/written every cron tick even when idle.
   const { keys } = await env.FOLIO_KV.list({ prefix: 'task:' })
-  await Promise.all(keys.map(async (key) => {
-    const raw = await env.FOLIO_KV.get(key.name)
-    if (!raw) return
-    const task: StoredTask = JSON.parse(raw)
-    if (task.notifyAt > now) return
+  if (keys.length === 0) return
+
+  // Read all task payloads, find due ones
+  const entries = await Promise.all(
+    keys.map(async (key) => {
+      const raw = await env.FOLIO_KV.get(key.name)
+      if (!raw) return null
+      return { key: key.name, task: JSON.parse(raw) as StoredTask }
+    })
+  )
+  const due = entries.filter((e): e is { key: string; task: StoredTask } =>
+    e !== null && e.task.notifyAt <= now
+  )
+
+  // Only fetch the OAuth2 token if there are tasks that are actually due right now.
+  // This prevents token KV reads/writes on every cron tick when tasks exist but aren't due yet.
+  if (due.length === 0) return
+
+  await Promise.all(due.map(async ({ key, task }) => {
     const result = await sendFCM(env, task.fcmToken, `⏰ ${task.title}`, 'Task reminder')
-    // Remove on success or invalid token; leave on transient error to retry
-    if (result !== 'error') await env.FOLIO_KV.delete(key.name)
+    if (result !== 'error') await env.FOLIO_KV.delete(key)
   }))
 }
 
