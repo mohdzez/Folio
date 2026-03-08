@@ -7,8 +7,9 @@ compatibility_date = "2024-09-23"
 binding = "FOLIO_KV"
 id = "1531a78cc2fe450a92dfc7ebc9958ab9"
 
-# Cron: runs every minute — 1,440 invocations/day.
-# KV usage is safe: only 1 list read/tick (1,440 reads/day = 1.4% of 100k free limit).
-# OAuth token is cached in KV so only 24 writes/day regardless of cron frequency.
+# Cron: runs every 2 minutes — 720 invocations/day.
+# KV list operations free tier limit is 1,000/day. At 1 per tick, running every minute
+# produces 1,440 list ops/day which exceeds the limit. Every 2 minutes = 720 list ops/day.
+# OAuth token is cached in KV so only ~24 writes/day regardless of cron frequency.
 [triggers]
-crons = ["*/1 * * * *"]
+crons = ["*/2 * * * *"]
