@@ -2,8 +2,15 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const basePath = process.env.VITE_BASE_PATH ?? '/Folio/'
+
 export default defineConfig({
-  base: '/Folio/',
+  base: basePath,
+  server: {
+    proxy: {
+      '/api': 'http://localhost:3000',
+    },
+  },
   build: {
     rollupOptions: {
       output: {
@@ -36,9 +43,9 @@ export default defineConfig({
         theme_color: '#080808',
         background_color: '#080808',
         display: 'standalone',
-        orientation: 'portrait',
-        start_url: '/Folio/',
-        scope: '/Folio/',
+        orientation: 'any',
+        start_url: basePath,
+        scope: basePath,
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -58,7 +65,7 @@ export default defineConfig({
             name: 'Add Task',
             short_name: 'Add',
             description: 'Quickly add a new task',
-            url: '/Folio/?action=add',
+            url: `${basePath}?action=add`,
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }],
           },
         ],

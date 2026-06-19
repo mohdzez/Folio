@@ -1,0 +1,22 @@
+version: "1.0"
+
+service:
+  name: folio
+  type: app
+  region: nyc3
+
+build:
+  strategy: dockerfile
+  context: .
+  dockerfile_path: Dockerfile
+
+runtime:
+  instance_size: apps-s-1vcpu-0.5gb
+  port: 3000
+  replicas: 1
+
+env:
+  NODE_ENV: production
+
+healthcheck:
+  path: /api/health

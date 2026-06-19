@@ -54,13 +54,15 @@ self.addEventListener('push', (event) => {
     data = { title: 'Folio', body: event.data.text() }
   }
   const title = data.title ?? 'Folio'
+  const scopeUrl = new URL(self.registration.scope)
+  const scopePath = scopeUrl.pathname.endsWith('/') ? scopeUrl.pathname : `${scopeUrl.pathname}/`
   const options: NotificationOptions = {
     body: data.body ?? '',
-    icon: data.icon ?? '/Folio/pwa-192x192.png',
-    badge: '/Folio/badge-96x96.png', // monochrome white-on-transparent for Android status bar
+    icon: data.icon ?? `${scopePath}pwa-192x192.png`,
+    badge: `${scopePath}badge-96x96.png`, // monochrome white-on-transparent for Android status bar
     tag: data.tag ?? 'folio-task',
     // renotify: true, // Not in all TS lib versions
-    data: { url: '/Folio/' },
+    data: { url: scopePath },
     // actions are supported on Android/Chrome but not in TS NotificationOptions type
     // actions: [{ action: 'open', title: 'Open' }, { action: 'snooze', title: 'Snooze 1h' }],
   }

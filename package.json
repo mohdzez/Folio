@@ -1,1 +1,37 @@
-{"name":"folio-pwa","private":true,"version":"0.1.0","type":"module","scripts":{"dev":"vite","build":"tsc -b && vite build","lint":"eslint .","preview":"vite preview"},"dependencies":{"@types/react":"^18.3.28","@types/react-dom":"^18.3.7","@use-gesture/react":"^10.3.1","chrono-node":"^2.9.0","firebase":"^12.10.0","react":"^18.3.1","react-dom":"^18.3.1"},"devDependencies":{"@vitejs/plugin-react":"^5.1.4","sharp":"^0.34.5","typescript":"^5.9.3","vite":"^5.4.21","vite-plugin-pwa":"^1.2.0","workbox-cacheable-response":"^7.4.0","workbox-precaching":"^7.4.0","workbox-routing":"^7.4.0","workbox-strategies":"^7.4.0","workbox-window":"^7.4.0"}}
+{
+  "name": "folio-pwa",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:server": "PORT=3000 node server/index.js",
+    "build": "tsc -b && vite build",
+    "start": "node server/index.js",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
+    "@use-gesture/react": "^10.3.1",
+    "chrono-node": "^2.9.0",
+    "express": "^5.2.1",
+    "firebase": "^12.10.0",
+    "pg": "^8.22.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.1.4",
+    "sharp": "^0.34.5",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21",
+    "vite-plugin-pwa": "^1.2.0",
+    "workbox-cacheable-response": "^7.4.0",
+    "workbox-precaching": "^7.4.0",
+    "workbox-routing": "^7.4.0",
+    "workbox-strategies": "^7.4.0",
+    "workbox-window": "^7.4.0"
+  }
+}

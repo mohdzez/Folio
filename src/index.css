@@ -108,6 +108,17 @@ body {
   touch-action: manipulation;
 }
 
+.app-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.desktop-rail {
+  display: none;
+}
+
 /* ─── Header ─────────────────────────────────────────────────────────────── */
 .app-header {
   padding: calc(var(--safe-top) + 16px) 20px 12px;
@@ -124,7 +135,7 @@ body {
   font-style: italic;
   font-weight: 400;
   color: var(--text);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   line-height: 1;
   user-select: none;
 }
@@ -931,6 +942,21 @@ body {
   color: #a04040;
 }
 
+.storage-pill {
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  text-transform: uppercase;
+}
+
+.storage-pill.postgres {
+  border-color: rgba(42, 122, 74, 0.45);
+  color: var(--success);
+}
+
 /* ─── Auth Badge ──────────────────────────────────────────────────────────── */
 .auth-chip {
   display: flex;
@@ -1039,6 +1065,182 @@ body {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (min-width: 900px) {
+  body {
+    background:
+      linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(135deg, #080808 0%, #0b0a08 48%, #11100d 100%);
+    background-size: 64px 64px, 64px 64px, auto;
+  }
+
+  .app-shell {
+    align-items: stretch;
+    display: grid;
+    gap: 24px;
+    grid-template-columns: minmax(240px, 300px) minmax(420px, 680px);
+    justify-content: center;
+    padding: 32px;
+  }
+
+  .desktop-rail {
+    align-self: stretch;
+    border: 1px solid rgba(228, 223, 214, 0.08);
+    border-radius: 8px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015)),
+      rgba(17, 17, 17, 0.72);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 0;
+    overflow: hidden;
+    padding: 24px;
+  }
+
+  .desktop-kicker {
+    color: var(--text);
+    font-family: var(--font-serif);
+    font-size: 58px;
+    font-style: italic;
+    line-height: 0.95;
+  }
+
+  .desktop-kicker::first-letter {
+    color: var(--accent);
+  }
+
+  .desktop-date {
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    margin-top: 10px;
+    text-transform: uppercase;
+  }
+
+  .desktop-metrics {
+    display: grid;
+    gap: 10px;
+  }
+
+  .desktop-metric {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 14px;
+  }
+
+  .desktop-metric span {
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .desktop-metric strong {
+    color: var(--text);
+    font-family: var(--font-serif);
+    font-size: 28px;
+    font-style: italic;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  .desktop-metric.urgent strong {
+    color: #b25050;
+  }
+
+  .desktop-storage {
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--border-2);
+    border-radius: 999px;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    gap: 8px;
+    letter-spacing: 0.08em;
+    padding: 9px 12px;
+    text-transform: uppercase;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+
+  .desktop-storage:hover {
+    background: var(--surface);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .storage-dot {
+    background: var(--text-dim);
+    border-radius: 50%;
+    display: inline-block;
+    height: 7px;
+    width: 7px;
+  }
+
+  .desktop-storage.postgres .storage-dot {
+    background: var(--success);
+  }
+
+  .desktop-storage.firestore .storage-dot {
+    background: var(--accent);
+  }
+
+  .app-main {
+    align-self: stretch;
+    background: var(--bg);
+    border: 1px solid rgba(228, 223, 214, 0.1);
+    border-radius: 8px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .app-header {
+    padding-top: 22px;
+  }
+
+  .task-list-scroll {
+    padding-bottom: 124px;
+  }
+
+  .add-task-fab {
+    bottom: 48px;
+    right: max(48px, calc((100vw - 1030px) / 2));
+  }
+
+  .add-task-panel {
+    border: 1px solid var(--border-2);
+    border-radius: var(--radius-lg);
+    bottom: 32px;
+    left: 50%;
+    max-height: min(560px, calc(100dvh - 80px));
+    right: auto;
+    width: min(560px, calc(100vw - 64px));
+    transform: translate(-50%, calc(100% + 48px));
+  }
+
+  .add-task-panel.open {
+    transform: translate(-50%, 0);
+  }
+
+  .toast-container {
+    bottom: 48px;
+  }
+}
+
+@media (min-width: 1180px) {
+  .app-shell {
+    grid-template-columns: 320px minmax(520px, 760px);
+  }
 }
 
 .animate-in {

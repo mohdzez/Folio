@@ -30,6 +30,14 @@ export interface SubTask {
 
 export type FilterView = 'all' | 'today' | 'upcoming' | 'overdue'
 
+export interface AppUser {
+  uid: string
+  email?: string | null
+  isAnonymous: boolean
+}
+
+export type StorageBackend = 'checking' | 'postgres' | 'firestore'
+
 export interface AppSettings {
   theme: 'dark' | 'light'
   reminderLeadTime: number

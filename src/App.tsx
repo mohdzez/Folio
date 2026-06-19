@@ -10,7 +10,7 @@ import { Settings } from './components/Settings'
 import { CalendarView } from './components/CalendarView'
 import type { FilterView, AppSettings, Task } from './types'
 import { BUILTIN_LIST_IDS } from './types'
-import { isOverdue } from './lib/parseDate'
+import { isOverdue, isToday } from './lib/parseDate'
 import {
   scheduleTaskNotification,
   cancelTaskNotification,
@@ -52,7 +52,7 @@ export default function App() {
   const activeLists = settings.activeLists ?? DEFAULT_ACTIVE_LISTS
   const activeListId = list === 'today' ? activeLists[0] ?? 'personal' : list
 
-  const { tasks, allTasks, loading, addTask, toggleDone, removeTask, toggleStar, snoozeTask, patchTask } =
+  const { tasks, allTasks, loading, addTask, toggleDone, removeTask, toggleStar, snoozeTask, patchTask, backend } =
     useTasks(user?.uid ?? null, list, filter, (msg) => {
       const id = Date.now()
       setToasts((t) => [...t, { id, msg: `⚠️ ${msg}` }])
@@ -245,6 +245,9 @@ export default function App() {
   }
 
   const overdueCount = allTasks.filter((t) => !t.done && t.dueDate && isOverdue(t.dueDate)).length
+  const openCount = allTasks.filter((t) => !t.done).length
+  const todayCount = allTasks.filter((t) => !t.done && t.dueDate && isToday(t.dueDate)).length
+  const starredCount = allTasks.filter((t) => !t.done && t.starred).length
 
   if (authLoading) {
     return (
@@ -261,85 +264,120 @@ export default function App() {
       onTouchStart={handleDoubleTap}
       onDoubleClick={handleDoubleTap}
     >
-      {/* Header */}
-      <header className="app-header">
-        <h1 className="app-title font-serif">
-          folio<span>.</span>
-        </h1>
-        <div className="header-actions">
-          <div
-            className={`auth-chip${user && !user.isAnonymous ? ' signed-in' : ''}`}
-            onClick={() => setSettingsOpen(true)}
-            role="button"
-            tabIndex={0}
-          >
-            <span className="dot" />
-            {user && !user.isAnonymous
-              ? 'synced'
-              : `guest·${user?.uid?.slice(-4) ?? '…'}`}
+      <aside className="desktop-rail" aria-label="Overview">
+        <div>
+          <div className="desktop-kicker">folio.</div>
+          <div className="desktop-date">
+            {new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'short', day: 'numeric' }).format(new Date())}
           </div>
-          <button
-            className={`icon-btn${settingsOpen ? ' active' : ''}`}
-            onClick={() => setSettingsOpen(true)}
-            aria-label="Settings"
-          >
-            {/* Cog / settings icon */}
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.3"/>
-              <path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.06 1.06M11.54 11.54l1.06 1.06M3.4 12.6l1.06-1.06M11.54 4.46l1.06-1.06" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M6.2 1.9A6.5 6.5 0 0 1 9.8 1.9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-              <path d="M6.2 14.1A6.5 6.5 0 0 0 9.8 14.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-              <path d="M1.9 6.2A6.5 6.5 0 0 0 1.9 9.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-              <path d="M14.1 6.2A6.5 6.5 0 0 1 14.1 9.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-            </svg>
-          </button>
         </div>
-      </header>
 
-      {/* Overdue banner */}
-      {overdueCount > 0 && filter !== 'overdue' && !calendarMode && (
-        <div className="overdue-banner" onClick={() => setFilter('overdue')} style={{ cursor: 'pointer' }}>
-          {overdueCount} overdue task{overdueCount > 1 ? 's' : ''} → tap to view
+        <div className="desktop-metrics">
+          <div className="desktop-metric">
+            <span>Open</span>
+            <strong>{openCount}</strong>
+          </div>
+          <div className="desktop-metric">
+            <span>Today</span>
+            <strong>{todayCount}</strong>
+          </div>
+          <div className="desktop-metric">
+            <span>Starred</span>
+            <strong>{starredCount}</strong>
+          </div>
+          <div className="desktop-metric urgent">
+            <span>Overdue</span>
+            <strong>{overdueCount}</strong>
+          </div>
         </div>
-      )}
 
-      {/* List tabs + calendar toggle */}
-      <ListSwitcher
-        active={list}
-        tasks={allTasks}
-        activeLists={activeLists}
-        onChange={(l) => { setList(l); setFilter(l === 'today' ? 'today' : 'all') }}
-        calendarMode={calendarMode}
-        onCalendarToggle={() => setCalendarMode((m) => !m)}
-      />
+        <button className={`desktop-storage ${backend}`} onClick={() => setSettingsOpen(true)}>
+          <span className="storage-dot" />
+          {backend === 'postgres' ? 'Postgres' : backend === 'firestore' ? 'Firestore' : 'Checking storage'}
+        </button>
+      </aside>
 
-      {calendarMode ? (
-        /* Calendar view */
-        <CalendarView
+      <main className="app-main">
+        {/* Header */}
+        <header className="app-header">
+          <h1 className="app-title font-serif">
+            folio<span>.</span>
+          </h1>
+          <div className="header-actions">
+            <div
+              className={`auth-chip${user && !user.isAnonymous ? ' signed-in' : ''}`}
+              onClick={() => setSettingsOpen(true)}
+              role="button"
+              tabIndex={0}
+            >
+              <span className="dot" />
+              {user && !user.isAnonymous
+                ? 'synced'
+                : `guest·${user?.uid?.slice(-4) ?? '…'}`}
+            </div>
+            <button
+              className={`icon-btn${settingsOpen ? ' active' : ''}`}
+              onClick={() => setSettingsOpen(true)}
+              aria-label="Settings"
+            >
+              {/* Cog / settings icon */}
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.3"/>
+                <path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.06 1.06M11.54 11.54l1.06 1.06M3.4 12.6l1.06-1.06M11.54 4.46l1.06-1.06" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M6.2 1.9A6.5 6.5 0 0 1 9.8 1.9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                <path d="M6.2 14.1A6.5 6.5 0 0 0 9.8 14.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                <path d="M1.9 6.2A6.5 6.5 0 0 0 1.9 9.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                <path d="M14.1 6.2A6.5 6.5 0 0 1 14.1 9.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        {/* Overdue banner */}
+        {overdueCount > 0 && filter !== 'overdue' && !calendarMode && (
+          <div className="overdue-banner" onClick={() => setFilter('overdue')} style={{ cursor: 'pointer' }}>
+            {overdueCount} overdue task{overdueCount > 1 ? 's' : ''} → tap to view
+          </div>
+        )}
+
+        {/* List tabs + calendar toggle */}
+        <ListSwitcher
+          active={list}
           tasks={allTasks}
-          onToggleDone={handleToggleDone}
-          onDelete={handleDelete}
-          onSnooze={handleSnooze}
+          activeLists={activeLists}
+          onChange={(l) => { setList(l); setFilter(l === 'today' ? 'today' : 'all') }}
+          calendarMode={calendarMode}
+          onCalendarToggle={() => setCalendarMode((m) => !m)}
         />
-      ) : (
-        <>
-          {/* Filter bar — swipe on it to change filter */}
-          <FilterBar active={filter} tasks={allTasks} onChange={setFilter} />
 
-          {/* Task list — double-tap empty area opens AddTask */}
-          <TaskList
-            tasks={tasks}
-            filter={filter}
-            loading={loading}
-            showList={list === 'today'}
+        {calendarMode ? (
+          /* Calendar view */
+          <CalendarView
+            tasks={allTasks}
             onToggleDone={handleToggleDone}
             onDelete={handleDelete}
-            onStar={toggleStar}
             onSnooze={handleSnooze}
-            onPatchNote={handlePatchNote}
           />
-        </>
-      )}
+        ) : (
+          <>
+            {/* Filter bar — swipe on it to change filter */}
+            <FilterBar active={filter} tasks={allTasks} onChange={setFilter} />
+
+            {/* Task list — double-tap empty area opens AddTask */}
+            <TaskList
+              tasks={tasks}
+              filter={filter}
+              loading={loading}
+              showList={list === 'today'}
+              onToggleDone={handleToggleDone}
+              onDelete={handleDelete}
+              onStar={toggleStar}
+              onSnooze={handleSnooze}
+              onPatchNote={handlePatchNote}
+            />
+          </>
+        )}
+      </main>
 
       {/* FAB — hidden when panel open */}
       <button
@@ -375,6 +413,7 @@ export default function App() {
         onClose={() => setSettingsOpen(false)}
         user={user}
         settings={settings}
+        backend={backend}
         onSignInWithGoogle={signInWithGoogle}
         onSignOut={signOut}
         onThemeToggle={handleThemeToggle}

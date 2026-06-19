@@ -18,6 +18,7 @@
   <img src="https://img.shields.io/badge/hosting-free-d4a853?style=flat-square" alt="Free hosting"/>
   <img src="https://img.shields.io/badge/React-TypeScript-d4a853?style=flat-square&logo=react&logoColor=black" alt="React TypeScript"/>
   <img src="https://img.shields.io/badge/Firebase-Firestore-d4a853?style=flat-square&logo=firebase&logoColor=black" alt="Firebase"/>
+  <img src="https://img.shields.io/badge/Postgres-optional-d4a853?style=flat-square&logo=postgresql&logoColor=black" alt="Optional Postgres"/>
 </p>
 
 ---
@@ -72,18 +73,24 @@ The core interaction: open the app, type `"Call dentist thursday 9am remind 15mi
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  GitHub Pages  (static hosting — free)                       │
-│    React + TypeScript + Vite PWA                             │
+│  React + TypeScript + Vite PWA                               │
+│    Mobile-first installable app                              │
+│    Desktop-compatible web layout                             │
 │    Service Worker: Workbox precache + FCM background push    │
 └──────────────────────┬──────────────────────────────────────┘
                        │
           ┌────────────┴────────────┐
           │                         │
    ┌──────▼──────┐         ┌────────▼────────┐
-   │  Firebase   │         │  Cloudflare     │
-   │  Auth       │         │  Worker         │
-   │  Firestore  │         │  (push notifs   │
-   │  FCM        │         │   when closed)  │
+   │  Static PWA │         │  Server mode    │
+   │  GitHub     │         │  Express + pg   │
+   │  Pages      │         │  DATABASE_URL   │
+   │  Firebase   │         │  Postgres tasks │
+   └──────┬──────┘         └────────┬────────┘
+          │                         │
+   ┌──────▼──────┐         ┌────────▼────────┐
+   │  Firestore  │         │  Liftoff canvas │
+   │  + FCM      │         │  DB injection   │
    └─────────────┘         └─────────────────┘
 ```
 
@@ -100,15 +107,18 @@ src/
 │   └── Settings.tsx        Settings drawer
 ├── hooks/
 │   ├── useAuth.ts          Firebase Auth (anonymous + Google sign-in)
-│   └── useTasks.ts         Firestore CRUD + optimistic updates
+│   └── useTasks.ts         Postgres API or Firestore CRUD + optimistic updates
 ├── lib/
 │   ├── firebase.ts         Firebase init with persistent local cache
 │   ├── firestore.ts        Firestore helpers
+│   ├── postgresApi.ts      Same-origin API client for server mode
 │   ├── parseDate.ts        chrono-node NL date parsing
 │   └── scheduler.ts        Dual-mode notification scheduler (local + Worker)
 ├── types/index.ts          Shared TypeScript types
 ├── sw.ts                   Service worker (Workbox + FCM push handler)
 └── App.tsx                 Root component
+server/
+└── index.js                Express static server + optional Postgres task API
 workers/
 └── notifier/               Cloudflare Worker — FCM v1 push when app is closed
     └── src/index.ts        KV task store · cron every minute · REST endpoints
@@ -165,7 +175,21 @@ npm run dev
 # → http://localhost:5173/Folio/
 ```
 
-### 5. Deploy to GitHub Pages (Free)
+### 5. Optional Postgres / Liftoff Mode
+
+Folio remains a mobile-first PWA, but it can also run as a desktop-friendly website with an Express API. If `DATABASE_URL` is present, the app stores tasks in Postgres. Without it, Folio falls back to Firebase/Firestore.
+
+```bash
+npm run build
+DATABASE_URL=postgres://user:password@localhost:5432/folio npm start
+# → http://localhost:3000/
+```
+
+The server exposes `GET /api/health`; it returns `storage: "postgres"` when the database connection is active.
+
+For a Liftoff canvas test, deploy the repo as a Docker-backed service, add a Postgres database node, connect it to the Folio service, and let Liftoff inject the DB connection. Folio reads the injected connection from `DATABASE_URL`.
+
+### 6. Deploy to GitHub Pages (Free)
 
 1. Push repo to GitHub
 2. **Settings → Secrets → Actions** — add all `VITE_FIREBASE_*` secrets
@@ -174,7 +198,7 @@ npm run dev
 
 Live at: `https://yourusername.github.io/Folio/`
 
-### 6. Cloudflare Worker (Push notifications when app is closed)
+### 7. Cloudflare Worker (Push notifications when app is closed)
 
 ```bash
 cd workers/notifier
@@ -206,7 +230,7 @@ Every advanced feature — reminders, notes, recurrence, subtasks — is one tap
 |---|---|---|
 | Hosting | GitHub Pages | Free |
 | Auth | Firebase Auth (anonymous + Google) | Free tier |
-| Database | Firestore (offline-persistent) | Free tier |
+| Database | Firestore (offline-persistent) or injected Postgres | Free tier / deployment-provided |
 | Push | Firebase Cloud Messaging v1 API | Free |
 | Background push | Cloudflare Worker + KV + cron | Free tier |
 | Build | Vite + vite-plugin-pwa | — |
@@ -219,4 +243,3 @@ Every advanced feature — reminders, notes, recurrence, subtasks — is one tap
 <p align="center">
   <sub>Built with ♥ · MIT License</sub>
 </p>
-

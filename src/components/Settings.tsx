@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { User } from 'firebase/auth'
-import type { AppSettings } from '../types'
+import type { AppSettings, AppUser, StorageBackend } from '../types'
 import { BUILTIN_LIST_IDS } from '../types'
 import { saveSettings } from '../lib/firestore'
 
@@ -9,14 +8,15 @@ const DEFAULT_ACTIVE_LISTS = [...BUILTIN_LIST_IDS]
 interface Props {
   isOpen: boolean
   onClose: () => void
-  user: User | null
+  user: AppUser | null
   settings: AppSettings
+  backend: StorageBackend
   onSignInWithGoogle: () => void
   onSignOut: () => void
   onThemeToggle: () => void
 }
 
-export function Settings({ isOpen, onClose, user, settings, onSignInWithGoogle, onSignOut, onThemeToggle }: Props) {
+export function Settings({ isOpen, onClose, user, settings, backend, onSignInWithGoogle, onSignOut, onThemeToggle }: Props) {
   const [permission, setPermission] = useState<NotificationPermission>(
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
   )
@@ -96,6 +96,17 @@ export function Settings({ isOpen, onClose, user, settings, onSignInWithGoogle, 
               </div>
             </div>
           )}
+        </div>
+
+        {/* Storage */}
+        <div className="settings-section">
+          <div className="settings-label">Storage</div>
+          <div className="settings-row">
+            <span className="settings-row-label">Task backend</span>
+            <span className={`storage-pill ${backend}`}>
+              {backend === 'postgres' ? 'Postgres' : backend === 'firestore' ? 'Firestore' : 'checking'}
+            </span>
+          </div>
         </div>
 
         {/* Lists */}

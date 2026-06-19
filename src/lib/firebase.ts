@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app'
-import { getAuth, browserLocalPersistence, setPersistence } from 'firebase/auth'
-import { initializeFirestore, persistentLocalCache, CACHE_SIZE_UNLIMITED } from 'firebase/firestore'
+import { Auth, getAuth, browserLocalPersistence, setPersistence } from 'firebase/auth'
+import { Firestore, initializeFirestore, persistentLocalCache, CACHE_SIZE_UNLIMITED } from 'firebase/firestore'
 import { getMessaging, isSupported } from 'firebase/messaging'
 
 const firebaseConfig = {
@@ -12,20 +12,34 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig)
+export const isFirebaseConfigured = Boolean(
+  firebaseConfig.apiKey &&
+  firebaseConfig.authDomain &&
+  firebaseConfig.projectId &&
+  firebaseConfig.appId,
+)
 
-export const auth = getAuth(app)
+const app = isFirebaseConfigured
+  ? (getApps().length ? getApps()[0] : initializeApp(firebaseConfig))
+  : null
+
+export const auth: Auth | null = app ? getAuth(app) : null
 
 // Explicitly persist auth across app restarts (localStorage survives PWA close)
-setPersistence(auth, browserLocalPersistence).catch(console.error)
+if (auth) {
+  setPersistence(auth, browserLocalPersistence).catch(console.error)
+}
 
 // Initialize Firestore with persistent local cache (survives app restarts)
 // Using modern API (initializeFirestore) instead of deprecated enableIndexedDbPersistence
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({ cacheSizeBytes: CACHE_SIZE_UNLIMITED }),
-})
+export const db: Firestore | null = app
+  ? initializeFirestore(app, {
+      localCache: persistentLocalCache({ cacheSizeBytes: CACHE_SIZE_UNLIMITED }),
+    })
+  : null
 
 export const getMessagingInstance = async () => {
+  if (!app) return null
   const supported = await isSupported()
   if (!supported) return null
   return getMessaging(app)
